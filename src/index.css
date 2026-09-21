@@ -1,0 +1,132 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --nav-h: 72px;
+}
+
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html {
+    scroll-behavior: smooth;
+    background: #080808;
+    color: #fff;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    background: #080808;
+    color: #fff;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 15px;
+    line-height: 1.65;
+    overflow-x: hidden;
+  }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: #080808; }
+  ::-webkit-scrollbar-thumb { background: #C1121F; border-radius: 99px; }
+}
+
+@layer components {
+  /* ── Eyebrow ── */
+  .eyebrow {
+    @apply inline-flex items-center gap-[10px] mb-5 flex-wrap;
+  }
+  .eyebrow-line {
+    @apply w-5 h-px bg-red flex-shrink-0;
+  }
+  .eyebrow-text {
+    @apply font-body text-[11px] font-semibold tracking-wider4 uppercase text-red;
+  }
+
+  /* ── Buttons ── */
+  .btn-primary {
+    @apply inline-flex items-center justify-center font-body text-[12px] font-semibold tracking-wider2 uppercase
+           text-white bg-red px-6 py-[13px] border border-red rounded-[2px] no-underline cursor-pointer
+           transition-all duration-200;
+    box-shadow: 0 4px 20px rgba(193,18,31,0.25);
+  }
+  .btn-primary:hover {
+    @apply -translate-y-0.5;
+    background: #a30e19;
+    box-shadow: 0 6px 28px rgba(193,18,31,0.4);
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center font-body text-[12px] font-medium tracking-wider2 uppercase
+           text-off bg-transparent px-6 py-[13px] border border-border2 rounded-[2px] no-underline cursor-pointer
+           transition-all duration-200;
+  }
+  .btn-ghost:hover { @apply border-white text-white -translate-y-0.5; }
+
+  /* ── Section Typography ── */
+  .section-title {
+    @apply font-display font-extrabold tracking-[-0.03em] leading-[1.05] mb-4;
+    font-size: clamp(34px, 4.2vw, 56px);
+  }
+  .section-desc {
+    @apply text-[15px] text-off leading-[1.8] max-w-[540px];
+  }
+
+  /* ── Section Wrap ── */
+  .section-wrap {
+    @apply py-[130px] border-t border-border;
+  }
+
+  /* ── Container ── */
+  .container-inner {
+    @apply max-w-[1280px] mx-auto px-10;
+  }
+  @media (max-width: 768px) {
+    .container-inner { @apply px-5; }
+  }
+
+  /* ── Spec rows ── */
+  .spec-row {
+    @apply grid border-b border-border py-4 text-[13px] transition-colors duration-150;
+    grid-template-columns: 1fr 1fr;
+  }
+  .spec-row:hover { background: rgba(193,18,31,0.04); }
+  .spec-key  { @apply text-muted; }
+  .spec-val  { @apply font-display font-medium text-white; }
+}
+
+/* ── Sound waveform animation ── */
+@keyframes wave-anim {
+  0%, 100% { transform: scaleY(0.2); }
+  50%       { transform: scaleY(1); }
+}
+
+/* ── Product reveal ring spin ── */
+@keyframes reveal-spin {
+  to { transform: translateX(-50%) rotate(360deg); }
+}
+
+/* ── Scan line ── */
+@keyframes scan-line {
+  0%   { top: 10%; opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { top: 85%; opacity: 0; }
+}
+
+/* ── Orbit ring ── */
+@keyframes orbit-rotate {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* ── Hero float ── */
+@keyframes float-headphone {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50%       { transform: translateY(-12px) rotate(0.5deg); }
+}
+
+/* ── Sound pulse ── */
+@keyframes sound-pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+  50%       { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+}
