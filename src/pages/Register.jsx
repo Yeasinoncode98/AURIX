@@ -6,7 +6,7 @@ export default function Register() {
   const { register } = useAuth()
   const navigate     = useNavigate()
 
-  const [form,    setForm]    = useState({ name: '', email: '', password: '', confirm: '' })
+  const [form,    setForm]    = useState({ name: '', email: '', phone: '', password: '', confirm: '' })
   const [errors,  setErrors]  = useState({})
   const [loading, setLoading] = useState(false)
   const [show,    setShow]    = useState(false)
@@ -15,10 +15,11 @@ export default function Register() {
 
   const validate = () => {
     const e = {}
-    if (!form.name.trim())               e.name     = 'Name is required'
-    if (!/\S+@\S+\.\S+/.test(form.email)) e.email   = 'Enter a valid email'
-    if (form.password.length < 6)        e.password = 'Password must be at least 6 characters'
-    if (form.password !== form.confirm)  e.confirm  = 'Passwords do not match'
+    if (!form.name.trim())                e.name     = 'Name is required'
+    if (!/\S+@\S+\.\S+/.test(form.email)) e.email    = 'Enter a valid email'
+    if (form.phone && !/^01[3-9]\d{8}$/.test(form.phone)) e.phone = 'Enter a valid BD phone number'
+    if (form.password.length < 6)         e.password = 'Password must be at least 6 characters'
+    if (form.password !== form.confirm)   e.confirm  = 'Passwords do not match'
     return e
   }
 
@@ -28,7 +29,7 @@ export default function Register() {
     if (Object.keys(errs).length) { setErrors(errs); return }
     setLoading(true)
     try {
-      await register(form.name.trim(), form.email, form.password)
+      await register(form.name.trim(), form.email, form.password, form.phone.trim())
       navigate('/shop', { replace: true })
     } catch (err) {
       // show the actual firebase error code for easier debugging
@@ -99,6 +100,17 @@ export default function Register() {
                   value={form.email} onChange={e => set('email', e.target.value)}
                   className={inputCls('email')} />
                 {errors.email && <p className="text-[11px] text-red">{errors.email}</p>}
+              </div>
+
+              {/* Phone */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-semibold tracking-wider2 uppercase text-muted">
+                  Phone Number <span className="text-muted text-[10px] normal-case">(optional)</span>
+                </label>
+                <input type="tel" placeholder="01XXXXXXXXX" autoComplete="tel"
+                  value={form.phone} onChange={e => set('phone', e.target.value)}
+                  className={inputCls('phone')} />
+                {errors.phone && <p className="text-[11px] text-red">{errors.phone}</p>}
               </div>
 
               {/* Password */}
