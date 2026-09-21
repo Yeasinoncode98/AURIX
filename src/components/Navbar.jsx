@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
+import { useAuth } from '../context/AuthContext'
 import CartDrawer from './CartDrawer'
 
 const homeLinks = [
@@ -19,6 +20,7 @@ export default function Navbar() {
   const navigate    = useNavigate()
   const isHome      = location.pathname === '/'
   const { totalQty } = useCart()
+  const { user, logout } = useAuth()
   const [cartOpen, setCartOpen] = useState(false)
 
   useEffect(() => {
@@ -106,6 +108,24 @@ export default function Navbar() {
                 </span>
               )}
             </button>
+
+            {/* Auth */}
+            {user ? (
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] text-muted hidden lg:block truncate max-w-[120px]">
+                  {user.displayName || user.email}
+                </span>
+                <button onClick={logout}
+                  className="btn-ghost" style={{ padding: '8px 16px', fontSize: '11px' }}>
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <Link to="/login" className="btn-ghost" style={{ padding: '8px 16px', fontSize: '11px' }}>
+                Sign In
+              </Link>
+            )}
+
             <a href="#cta" onClick={e => smoothTo(e, '#cta')}
               className="btn-primary"
               style={{ padding: '10px 22px', fontSize: '11px' }}>
@@ -161,7 +181,7 @@ export default function Navbar() {
           <a href="#cta" onClick={e => smoothTo(e, '#cta')}
             className="flex items-center justify-center w-full text-[12px] font-semibold tracking-wider2 uppercase
                        text-white no-underline py-4 bg-red hover:bg-[#a30e19] transition-colors duration-200 rounded-[2px]">
-            Order Now — $449
+            Order Now — ৳449
           </a>
         </div>
       </nav>

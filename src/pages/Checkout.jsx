@@ -66,9 +66,7 @@ export default function Checkout() {
       if (!/^01[3-9]\d{8}$/.test(form.senderNumber))
         e.senderNumber = 'Enter a valid sender number'
       if (form.trxId.length !== trxLen)
-        e.trxId = `Transaction ID must be exactly ${trxLen} digits`
-      if (!/^\d+$/.test(form.trxId))
-        e.trxId = 'Transaction ID must be numeric'
+        e.trxId = `Transaction ID must be exactly ${trxLen} characters`
     }
     return e
   }
@@ -232,15 +230,16 @@ export default function Checkout() {
                           className={inputCls(errors.senderNumber)} />
                       </Field>
                       <Field
-                        label={`Transaction ID (${trxLen} digits)`}
+                        label={`Transaction ID (${trxLen} characters)`}
                         required error={errors.trxId}>
                         <input
                           type="text"
-                          placeholder={`${'X'.repeat(trxLen)}`}
+                          placeholder={form.payment === 'bkash' ? 'e.g. DIK9P12LHN' : 'e.g. 75YQWZD5'}
                           maxLength={trxLen}
                           value={form.trxId}
-                          onChange={e => set('trxId', e.target.value.replace(/\D/g, ''))}
+                          onChange={e => set('trxId', e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
                           className={inputCls(errors.trxId)}
+                          style={{ fontFamily: 'monospace', letterSpacing: '0.08em' }}
                         />
                         <span className="text-[10px] text-muted text-right">{form.trxId.length}/{trxLen}</span>
                       </Field>
@@ -272,7 +271,7 @@ export default function Checkout() {
                         <p className="text-[11px] text-muted">Qty: {item.qty}</p>
                       </div>
                       <span className="text-[13px] font-semibold text-white flex-shrink-0">
-                        ${(item.price * item.qty).toLocaleString()}
+                        ৳{(item.price * item.qty).toLocaleString()}
                       </span>
                     </div>
                   ))}
@@ -282,7 +281,7 @@ export default function Checkout() {
                 <div className="px-6 py-5 border-t border-border space-y-3">
                   <div className="flex justify-between text-[13px] text-muted">
                     <span>Subtotal</span>
-                    <span className="text-off">${totalAmount.toLocaleString()}</span>
+                    <span className="text-off">৳{totalAmount.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-[13px] text-muted">
                     <span>Delivery Fee</span>
@@ -295,8 +294,8 @@ export default function Checkout() {
                     <span>Total</span>
                     <span>
                       {form.delivery
-                        ? <>${totalAmount.toLocaleString()} <span className="text-[14px] text-muted font-medium">+ ৳{deliveryFee}</span></>
-                        : `$${totalAmount.toLocaleString()}`
+                        ? <>৳{totalAmount.toLocaleString()} <span className="text-[14px] text-muted font-medium">+ ৳{deliveryFee}</span></>
+                        : `৳${totalAmount.toLocaleString()}`
                       }
                     </span>
                   </div>

@@ -251,10 +251,10 @@ export default function ProductDetail() {
                   <div>
                     <p className="text-[10px] uppercase tracking-wider2 text-muted mb-1">Price</p>
                     <span className="font-display font-extrabold text-[40px] tracking-[-0.04em] text-white leading-none">
-                      ${product.price}
+                      ৳{product.price}
                     </span>
                     {qty > 1 && (
-                      <span className="text-[13px] text-muted ml-2">× {qty} = ${(product.price * qty).toLocaleString()}</span>
+                      <span className="text-[13px] text-muted ml-2">× {qty} = ৳{(product.price * qty).toLocaleString()}</span>
                     )}
                   </div>
                   <div>
@@ -448,7 +448,7 @@ export default function ProductDetail() {
                       <p className="text-[10px] uppercase tracking-wider2 text-muted mb-1">{p.color}</p>
                       <h4 className="font-display font-bold text-[17px] tracking-[-0.02em] text-white mb-1">{p.name}</h4>
                       <div className="flex items-center justify-between mt-3">
-                        <span className="font-display font-extrabold text-[18px] text-white">${p.price}</span>
+                        <span className="font-display font-extrabold text-[18px] text-white">৳{p.price}</span>
                         <span className="text-[10px] uppercase tracking-wider2 text-red font-semibold group-hover:underline">
                           View →
                         </span>

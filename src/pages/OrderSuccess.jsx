@@ -4,14 +4,10 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 export default function OrderSuccess() {
   const { state }  = useLocation()
   const navigate   = useNavigate()
-  const circleRef  = useRef(null)
   const contentRef = useRef(null)
 
-  /* redirect if accessed directly without order state */
   useEffect(() => {
     if (!state?.orderId) { navigate('/shop', { replace: true }); return }
-
-    /* animate in */
     const el = contentRef.current
     if (el) {
       el.style.opacity = '0'
@@ -27,6 +23,13 @@ export default function OrderSuccess() {
   if (!state?.orderId) return null
 
   const { orderId, name, payment, delivery, total } = state
+
+  const rows = [
+    ['Customer',       name],
+    ['Payment Method', payment],
+    ['Delivery Zone',  delivery],
+    ['Total Bill',     '৳' + total.toLocaleString()],
+  ]
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center px-5 py-20"
@@ -44,29 +47,23 @@ export default function OrderSuccess() {
 
       <div ref={contentRef} className="relative z-[1] w-full max-w-[520px] text-center">
 
-        {/* ── Success icon ── */}
+        {/* Success icon */}
         <div className="relative flex items-center justify-center mb-8">
-          {/* Orbit rings */}
           <div className="absolute w-[140px] h-[140px] rounded-full border border-red/10"
             style={{ animation: 'orbit-rotate 6s linear infinite' }} />
           <div className="absolute w-[110px] h-[110px] rounded-full border border-red/20"
             style={{ animation: 'orbit-rotate 4s linear infinite reverse' }} />
-          {/* Check circle */}
-          <div className="relative w-20 h-20 rounded-full bg-red/10 border-2 border-red
-                          flex items-center justify-center"
+          <div className="relative w-20 h-20 rounded-full bg-red/10 border-2 border-red flex items-center justify-center"
             style={{ boxShadow: '0 0 40px rgba(193,18,31,0.3)' }}>
             <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
               <path d="M6 16l7 7 13-13" stroke="#C1121F" strokeWidth="2.5"
                 strokeLinecap="round" strokeLinejoin="round"
-                style={{
-                  strokeDasharray: 40, strokeDashoffset: 40,
-                  animation: 'dash-check 0.5s 0.2s ease forwards',
-                }} />
+                style={{ strokeDasharray: 40, strokeDashoffset: 40, animation: 'dash-check 0.5s 0.2s ease forwards' }} />
             </svg>
           </div>
         </div>
 
-        {/* ── Heading ── */}
+        {/* Heading */}
         <div className="eyebrow justify-center mb-3">
           <span className="eyebrow-line" />
           <span className="eyebrow-text">Order Confirmed</span>
@@ -76,35 +73,29 @@ export default function OrderSuccess() {
           Thank you, {name.split(' ')[0]}!
         </h1>
         <p className="text-[14px] text-off leading-[1.8] mb-8 max-w-[400px] mx-auto">
-          Your order has been successfully received. We'll process it shortly and reach out to confirm delivery.
+          Your order has been successfully received. We will process it shortly and reach out to confirm delivery.
         </p>
 
-        {/* ── Order details card ── */}
+        {/* Order details card */}
         <div className="rounded-[8px] border border-border overflow-hidden mb-8 text-left"
           style={{ background: 'linear-gradient(160deg, #141414, #0f0f0f)' }}>
 
-          {/* Order ID header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-border">
             <span className="text-[11px] uppercase tracking-wider2 text-muted">Order ID</span>
             <span className="font-display font-bold text-[15px] tracking-[-0.02em] text-red">{orderId}</span>
           </div>
 
-          {/* Details rows */}
-          {[
-            ['Customer', name],
-            ['Payment Method', payment],
-            ['Delivery Zone', delivery],
-            ['Amount Paid (Courier)', `৳${delivery === 'Inside Dhaka' ? 80 : 130}`],
-            ['Order Total', `$${(total - (delivery === 'Inside Dhaka' ? 80 : 130)).toLocaleString()} + ৳${delivery === 'Inside Dhaka' ? 80 : 130} delivery`],
-          ].map(([label, value]) => (
+          {rows.map(([label, value]) => (
             <div key={label} className="flex items-center justify-between px-6 py-3.5 border-b border-[#1a1a1a] last:border-0">
               <span className="text-[12px] text-muted">{label}</span>
-              <span className="text-[13px] font-medium text-off">{value}</span>
+              <span className={`text-[13px] font-medium ${label === 'Total Bill' ? 'text-white font-bold' : 'text-off'}`}>
+                {value}
+              </span>
             </div>
           ))}
         </div>
 
-        {/* ── What happens next ── */}
+        {/* What happens next */}
         <div className="rounded-[8px] border border-border px-6 py-5 mb-8 text-left"
           style={{ background: 'linear-gradient(135deg, #141414, #0f0f0f)' }}>
           <p className="text-[11px] uppercase tracking-wider2 text-muted mb-4">What happens next</p>
@@ -112,7 +103,7 @@ export default function OrderSuccess() {
             {[
               'We verify your payment transaction',
               'Your order is packed and handed to courier',
-              'You receive delivery within 2–5 working days',
+              'You receive delivery within 2-5 working days',
             ].map((step, i) => (
               <div key={i} className="flex items-start gap-3">
                 <span className="w-5 h-5 rounded-full border border-red/40 flex items-center justify-center
@@ -125,7 +116,7 @@ export default function OrderSuccess() {
           </div>
         </div>
 
-        {/* ── CTAs ── */}
+        {/* CTAs */}
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link to="/shop" className="btn-primary" style={{ fontSize: '12px', padding: '13px 28px' }}>
             Continue Shopping
@@ -137,9 +128,7 @@ export default function OrderSuccess() {
       </div>
 
       <style>{`
-        @keyframes dash-check {
-          to { stroke-dashoffset: 0; }
-        }
+        @keyframes dash-check { to { stroke-dashoffset: 0; } }
       `}</style>
     </main>
   )

@@ -65,7 +65,7 @@ export default function Hero() {
               <a href="#cta" onClick={e => smoothTo(e, '#cta')}
                 className="btn-primary flex-1 sm:flex-none text-center whitespace-nowrap"
                 style={{ minWidth: 0 }}>
-                Order Now — $449
+                Order Now — ৳449
               </a>
               <a href="#engineering" onClick={e => smoothTo(e, '#engineering')}
                 className="btn-ghost flex-1 sm:flex-none text-center whitespace-nowrap"

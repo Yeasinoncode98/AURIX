@@ -34,7 +34,7 @@ export default function CTA() {
         </p>
 
         <div className="flex items-baseline justify-center gap-3 mb-9">
-          <span className="font-display font-extrabold tracking-[-0.03em]" style={{ fontSize: 52 }}>$449</span>
+          <span className="font-display font-extrabold tracking-[-0.03em]" style={{ fontSize: 52 }}>৳449</span>
           <span className="text-[11px] tracking-wider2 uppercase text-muted">USD · Free Express Shipping</span>
         </div>
 

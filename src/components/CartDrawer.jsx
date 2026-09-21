@@ -116,7 +116,7 @@ export default function CartDrawer({ open, onClose }) {
                     </div>
 
                     <span className="font-display font-bold text-[15px] tracking-[-0.02em] text-white">
-                      ${(item.price * item.qty).toLocaleString()}
+                      ৳{(item.price * item.qty).toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -132,7 +132,7 @@ export default function CartDrawer({ open, onClose }) {
             <div className="space-y-2">
               <div className="flex justify-between text-[12px] text-muted">
                 <span>Subtotal ({totalQty} {totalQty === 1 ? 'item' : 'items'})</span>
-                <span>${totalAmount.toLocaleString()}</span>
+                <span>৳{totalAmount.toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-[12px] text-muted">
                 <span>Shipping</span>
@@ -140,7 +140,7 @@ export default function CartDrawer({ open, onClose }) {
               </div>
               <div className="flex justify-between font-display font-extrabold text-[18px] tracking-[-0.02em] text-white pt-2 border-t border-border">
                 <span>Total</span>
-                <span>${totalAmount.toLocaleString()}</span>
+                <span>৳{totalAmount.toLocaleString()}</span>
               </div>
             </div>
 

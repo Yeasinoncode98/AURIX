@@ -6,6 +6,8 @@ import Shop from './pages/Shop'
 import ProductDetail from './pages/ProductDetail'
 import Checkout from './pages/Checkout'
 import OrderSuccess from './pages/OrderSuccess'
+import Login from './pages/Login'
+import Register from './pages/Register'
 
 export default function App() {
   return (
@@ -18,6 +20,8 @@ export default function App() {
         <Route path="/shop/:slug"     element={<ProductDetail />} />
         <Route path="/checkout"       element={<Checkout />} />
         <Route path="/order-success"  element={<OrderSuccess />} />
+        <Route path="/login"          element={<Login />} />
+        <Route path="/register"       element={<Register />} />
       </Routes>
       <Footer />
     </>

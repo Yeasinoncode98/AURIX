@@ -168,7 +168,7 @@ function ProductCard({ product, onAdd, index }) {
           style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
           <div>
             <p className="text-[9px] uppercase tracking-wider2 text-muted mb-0.5">Price</p>
-            <span className="font-display font-extrabold text-[22px] tracking-[-0.03em] text-white">${product.price}</span>
+            <span className="font-display font-extrabold text-[22px] tracking-[-0.03em] text-white">৳{product.price}</span>
           </div>
           <AddButton product={product} onAdd={onAdd} />
         </div>
