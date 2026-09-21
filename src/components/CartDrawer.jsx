@@ -1,7 +1,9 @@
 import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 
 export default function CartDrawer({ open, onClose }) {
+  const navigate = useNavigate()
   const { items, remove, inc, dec, clear, totalQty, totalAmount } = useCart()
 
   // lock body scroll when open
@@ -134,7 +136,7 @@ export default function CartDrawer({ open, onClose }) {
               </div>
               <div className="flex justify-between text-[12px] text-muted">
                 <span>Shipping</span>
-                <span className="text-green-400">Free</span>
+                <span className="text-off italic">Select at checkout</span>
               </div>
               <div className="flex justify-between font-display font-extrabold text-[18px] tracking-[-0.02em] text-white pt-2 border-t border-border">
                 <span>Total</span>
@@ -142,8 +144,10 @@ export default function CartDrawer({ open, onClose }) {
               </div>
             </div>
 
-            <button className="btn-primary w-full justify-center" style={{ fontSize: '12px', padding: '14px 20px' }}>
-              Checkout — ${totalAmount.toLocaleString()}
+            <button
+              onClick={() => { onClose(); navigate('/checkout') }}
+              className="btn-primary w-full justify-center" style={{ fontSize: '12px', padding: '14px 20px' }}>
+              Proceed to Checkout
             </button>
             <button onClick={onClose}
               className="btn-ghost w-full justify-center" style={{ fontSize: '11px', padding: '12px 20px' }}>

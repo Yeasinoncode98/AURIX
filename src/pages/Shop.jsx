@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import CartDrawer from '../components/CartDrawer'
 import ShopIntro from '../components/ShopIntro'
@@ -68,13 +69,14 @@ function AddButton({ product, onAdd }) {
 function ProductCard({ product, onAdd, index }) {
   const ref = useFadeIn(index * 100)
   const [hovered, setHovered] = useState(false)
+  const navigate = useNavigate()
 
   return (
     <div
       ref={ref}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="group relative flex flex-col rounded-[6px] overflow-hidden cursor-default"
+      className="group relative flex flex-col rounded-[6px] overflow-hidden"
       style={{
         background: 'linear-gradient(145deg, #161616 0%, #111111 100%)',
         border: `1px solid ${hovered ? '#C1121F40' : '#222'}`,
@@ -104,23 +106,20 @@ function ProductCard({ product, onAdd, index }) {
         </svg>
       </button>
 
-      {/* Image area */}
-      <div className="relative flex items-center justify-center overflow-hidden"
-           style={{ height: '220px', background: 'radial-gradient(ellipse at center, #1c1c1c 0%, #0e0e0e 70%)' }}>
-        {/* Glow behind image */}
+      {/* Clickable image area → product detail */}
+      <div
+        onClick={() => navigate(`/shop/${product.slug}`)}
+        className="relative flex items-center justify-center overflow-hidden cursor-pointer"
+        style={{ height: '220px', background: 'radial-gradient(ellipse at center, #1c1c1c 0%, #0e0e0e 70%)' }}>
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div style={{
-            width: 160, height: 160,
-            borderRadius: '50%',
+            width: 160, height: 160, borderRadius: '50%',
             background: 'radial-gradient(circle, rgba(193,18,31,0.18) 0%, transparent 70%)',
-            opacity: hovered ? 1 : 0,
-            transition: 'opacity 0.4s ease',
+            opacity: hovered ? 1 : 0, transition: 'opacity 0.4s ease',
           }} />
         </div>
-        <img
-          src={product.image}
-          alt={product.name}
-          className="relative z-[1] object-contain transition-transform duration-500"
+        <img src={product.image} alt={product.name}
+          className="relative z-[1] object-contain"
           style={{
             width: '62%',
             transform: hovered ? 'scale(1.08) translateY(-4px)' : 'scale(1) translateY(0)',
@@ -128,35 +127,35 @@ function ProductCard({ product, onAdd, index }) {
             transition: 'transform 0.5s ease, filter 0.5s ease',
           }}
         />
-        {/* Bottom gradient fade */}
+        {/* "View Details" overlay on hover */}
+        <div className="absolute inset-0 flex items-center justify-center z-[2]"
+          style={{ opacity: hovered ? 1 : 0, transition: 'opacity 0.3s ease' }}>
+          <span className="text-[10px] tracking-wider2 uppercase font-semibold text-white/70 border border-white/20
+                           px-3 py-1.5 rounded-[2px] backdrop-blur-sm bg-black/30">
+            View Details
+          </span>
+        </div>
         <div className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
           style={{ background: 'linear-gradient(to top, #111111, transparent)' }} />
       </div>
 
-      {/* Glass divider */}
       <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, #ffffff08, transparent)' }} />
 
       {/* Content */}
       <div className="flex flex-col flex-1 p-5">
-        {/* Color tag */}
         <div className="flex items-center gap-2 mb-3">
           <div className="w-2 h-2 rounded-full bg-red" style={{ boxShadow: '0 0 6px rgba(193,18,31,0.8)' }} />
-          <span className="text-[10px] font-semibold tracking-wider4 uppercase text-muted">
-            {product.color}
-          </span>
+          <span className="text-[10px] font-semibold tracking-wider4 uppercase text-muted">{product.color}</span>
         </div>
-
-        {/* Name + tagline */}
-        <h3 className="font-display font-extrabold text-[20px] tracking-[-0.03em] text-white leading-tight mb-1">
+        <h3
+          onClick={() => navigate(`/shop/${product.slug}`)}
+          className="font-display font-extrabold text-[20px] tracking-[-0.03em] text-white leading-tight mb-1 cursor-pointer hover:text-red transition-colors duration-200">
           {product.name}
         </h3>
         <p className="text-[12px] text-muted leading-relaxed mb-4">{product.tagline}</p>
-
-        {/* Specs — horizontal pills */}
         <div className="flex flex-wrap gap-2 mb-5">
           {Object.entries(product.specs).map(([k, v]) => (
-            <div key={k}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-[3px] border border-border"
+            <div key={k} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-[3px] border border-border"
               style={{ background: 'rgba(255,255,255,0.025)' }}>
               <span className="text-[9px] uppercase tracking-wider2 text-muted">{k}</span>
               <span className="text-[9px] text-[#888] mx-0.5">·</span>
@@ -164,18 +163,12 @@ function ProductCard({ product, onAdd, index }) {
             </div>
           ))}
         </div>
-
-        {/* Spacer */}
         <div className="flex-1" />
-
-        {/* Glassmorphic footer */}
         <div className="flex items-center justify-between pt-4"
           style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
           <div>
             <p className="text-[9px] uppercase tracking-wider2 text-muted mb-0.5">Price</p>
-            <span className="font-display font-extrabold text-[22px] tracking-[-0.03em] text-white">
-              ${product.price}
-            </span>
+            <span className="font-display font-extrabold text-[22px] tracking-[-0.03em] text-white">${product.price}</span>
           </div>
           <AddButton product={product} onAdd={onAdd} />
         </div>
