@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { db } from '../firebase'
 import { useCart } from '../context/CartContext'
+import { useAuth } from '../context/AuthContext'
 
 const DELIVERY = {
   dhaka:   { label: 'Inside Dhaka',   fee: 80  },
@@ -33,6 +36,7 @@ const inputCls = (err) =>
 
 export default function Checkout() {
   const { items, totalAmount, clear } = useCart()
+  const { currentUser } = useAuth()
   const navigate = useNavigate()
 
   /* ── form state ── */
@@ -71,15 +75,60 @@ export default function Checkout() {
     return e
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     const errs = validate()
     if (Object.keys(errs).length) { setErrors(errs); return }
     setPlacing(true)
 
-    /* simulate order processing */
-    setTimeout(() => {
+    try {
+      // Generate unique order ID
       const orderId = 'AX-' + Date.now().toString(36).toUpperCase()
+
+      // Build the order document — everything admin will need
+      const orderData = {
+        orderId,
+        status: 'pending',           // pending → confirmed → shipped → delivered
+        createdAt: serverTimestamp(),
+
+        // Customer info
+        customerName:  form.name,
+        customerPhone: form.phone,
+        deliveryAddress: form.address,
+        userId: currentUser?.uid || null,
+        userEmail: currentUser?.email || null,
+
+        // Delivery
+        deliveryZone:   form.delivery,                    // 'dhaka' | 'outside'
+        deliveryLabel:  DELIVERY[form.delivery].label,    // 'Inside Dhaka' | 'Outside Dhaka'
+
+        // Payment
+        paymentMethod:  form.payment,                     // 'bkash' | 'nagad'
+        paymentLabel:   PAYMENT[form.payment].label,      // 'bKash' | 'Nagad'
+        paymentNumber:  PAYMENT[form.payment].number,     // merchant number
+        senderNumber:   form.senderNumber,                // customer's number
+        trxId:          form.trxId,                       // transaction ID
+
+        // Order items — snapshot of what was ordered
+        items: items.map(item => ({
+          id:       item.id,
+          slug:     item.slug,
+          name:     item.name,
+          price:    item.price,
+          qty:      item.qty,
+          image:    item.image,
+          subtotal: item.price * item.qty,
+        })),
+
+        // Financials
+        subtotal:    totalAmount,
+        deliveryFee: deliveryFee,
+        totalAmount: totalWithFee,
+      }
+
+      // Save to Firestore → orders/{orderId}
+      await setDoc(doc(collection(db, 'orders'), orderId), orderData)
+
       clear()
       navigate('/order-success', {
         state: {
@@ -90,7 +139,11 @@ export default function Checkout() {
           total:    totalWithFee,
         },
       })
-    }, 1400)
+    } catch (err) {
+      console.error('Order save failed:', err)
+      setPlacing(false)
+      setErrors({ submit: 'Failed to place order. Please try again.' })
+    }
   }
 
   /* ── empty cart guard ── */
@@ -303,6 +356,9 @@ export default function Checkout() {
 
                 {/* CTA */}
                 <div className="px-6 pb-6">
+                  {errors.submit && (
+                    <p className="text-[11px] text-red text-center mb-3">{errors.submit}</p>
+                  )}
                   <button
                     type="submit"
                     disabled={placing}

@@ -1,5 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { collection, getDocs, orderBy, query } from 'firebase/firestore'
+import { db } from '../firebase'
 import { useCart } from '../context/CartContext'
 import CartDrawer from '../components/CartDrawer'
 import ShopIntro from '../components/ShopIntro'
@@ -188,9 +190,13 @@ export default function Shop() {
   const heroRef = useFadeIn(0)
 
   useEffect(() => {
-    fetch('/products.json')
-      .then(r => { if (!r.ok) throw new Error('Failed to load'); return r.json() })
-      .then(d => { setProducts(d); setLoading(false) })
+    const q = query(collection(db, 'products'), orderBy('id'))
+    getDocs(q)
+      .then(snap => {
+        const data = snap.docs.map(d => ({ ...d.data(), slug: d.id }))
+        setProducts(data)
+        setLoading(false)
+      })
       .catch(e => { setError(e.message); setLoading(false) })
   }, [])
 
