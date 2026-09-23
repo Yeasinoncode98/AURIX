@@ -1,10 +1,11 @@
 import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { collection, getDocs, orderBy, query } from 'firebase/firestore'
+import { collection, getDocs, orderBy, query, onSnapshot, where } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useCart } from '../context/CartContext'
 import CartDrawer from '../components/CartDrawer'
 import ShopIntro from '../components/ShopIntro'
+import CouponMarquee from '../components/CouponMarquee'
 
 /* ── tiny hook: fade-up on scroll into view ── */
 function useFadeIn(delay = 0) {
@@ -182,6 +183,8 @@ function ProductCard({ product, onAdd, index }) {
 /* ── Main Shop Page ── */
 export default function Shop() {
   const [products,     setProducts]     = useState([])
+  const [categories,   setCategories]   = useState([])
+  const [activeCategory, setActiveCategory] = useState('all')
   const [loading,      setLoading]      = useState(true)
   const [error,        setError]        = useState(null)
   const [introDone,    setIntroDone]    = useState(false)
@@ -200,10 +203,25 @@ export default function Shop() {
       .catch(e => { setError(e.message); setLoading(false) })
   }, [])
 
+  // Real-time categories
+  useEffect(() => {
+    return onSnapshot(collection(db, 'categories'), snap =>
+      setCategories(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    )
+  }, [])
+
   const handleAdd = (product) => {
     add(product)
     setCartOpen(true)
   }
+
+  // Filter products by category
+  const filteredProducts = activeCategory === 'all'
+    ? products
+    : products.filter(p =>
+        p.categoryId === activeCategory ||
+        (p.categories || []).includes(activeCategory)
+      )
 
   return (
     <>
@@ -214,6 +232,9 @@ export default function Shop() {
       <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
 
       <main style={{ paddingTop: 'var(--nav-h)', opacity: introDone ? 1 : 0, transition: 'opacity 0.5s ease' }}>
+
+        {/* Coupon marquee — shows only if active coupons exist */}
+        <CouponMarquee />
 
         {/* Floating cart button */}
         <button
@@ -270,7 +291,12 @@ export default function Shop() {
           <div className="container-inner">
             <div className="flex items-center justify-between mb-10">
               <p className="text-[12px] text-muted uppercase tracking-wider2">
-                {products.length} Products
+                {filteredProducts.length} Products
+                {activeCategory !== 'all' && (
+                  <span className="text-off ml-1.5 normal-case">
+                    in "{categories.find(c => c.id === activeCategory)?.name}"
+                  </span>
+                )}
               </p>
               <button
                 onClick={() => setCartOpen(true)}
@@ -283,6 +309,39 @@ export default function Shop() {
                 View Cart {totalQty > 0 && <span className="text-red">({totalQty})</span>}
               </button>
             </div>
+
+            {/* Category filters — shows only if categories exist */}
+            {categories.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-8">
+                <button
+                  onClick={() => setActiveCategory('all')}
+                  className={`px-4 py-1.5 rounded-full text-[11px] font-semibold transition-all duration-200
+                              border
+                              ${activeCategory === 'all'
+                                ? 'bg-red text-white border-red'
+                                : 'bg-transparent border-border text-muted hover:border-[#333] hover:text-white'}`}>
+                  All
+                </button>
+                {categories.map(cat => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setActiveCategory(cat.id)}
+                    className={`px-4 py-1.5 rounded-full text-[11px] font-semibold transition-all duration-200
+                                border flex items-center gap-1.5
+                                ${activeCategory === cat.id
+                                  ? 'text-white border-transparent'
+                                  : 'bg-transparent border-border text-muted hover:border-[#333] hover:text-white'}`}
+                    style={activeCategory === cat.id ? {
+                      background: cat.color || '#C1121F',
+                      borderColor: cat.color || '#C1121F',
+                      boxShadow: `0 0 16px ${cat.color || '#C1121F'}40`,
+                    } : {}}>
+                    {cat.icon && <span>{cat.icon}</span>}
+                    {cat.name}
+                  </button>
+                ))}
+              </div>
+            )}
 
             {loading && (
               <div className="flex items-center justify-center py-32">
@@ -298,9 +357,20 @@ export default function Shop() {
 
             {!loading && !error && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {products.map((p, i) => (
-                  <ProductCard key={p.id} product={p} onAdd={handleAdd} index={i} />
-                ))}
+                {filteredProducts.length > 0
+                  ? filteredProducts.map((p, i) => (
+                      <ProductCard key={p.id} product={p} onAdd={handleAdd} index={i} />
+                    ))
+                  : (
+                    <div className="col-span-full flex flex-col items-center justify-center py-24">
+                      <p className="text-off text-[14px] mb-2">No products in this category yet</p>
+                      <button onClick={() => setActiveCategory('all')}
+                        className="text-[12px] text-red hover:text-red/80 transition-colors">
+                        View all products →
+                      </button>
+                    </div>
+                  )
+                }
               </div>
             )}
           </div>

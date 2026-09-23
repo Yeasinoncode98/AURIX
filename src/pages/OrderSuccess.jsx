@@ -19,26 +19,40 @@ export default function OrderSuccess() {
     getDoc(doc(db, 'orders', state.orderId))
       .then(snap => {
         if (snap.exists()) {
-          setOrder({ id: snap.id, ...snap.data() })
+          const data = snap.data()
+          // Derive missing fields for older orders
+          const deliveryFee = data.deliveryFee ?? 0
+          const totalAmount = data.totalAmount ?? state.total ?? 0
+          const subtotal    = data.subtotal ?? (totalAmount - deliveryFee)
+          setOrder({ id: snap.id, ...data, subtotal, deliveryFee, totalAmount })
         } else {
-          // Fallback: use state data if Firestore read fails
+          // Fallback: use state data
+          const totalAmount = state.total ?? 0
+          const deliveryFee = state.deliveryFee ?? 0
+          const subtotal    = totalAmount - deliveryFee
           setOrder({
             orderId:       state.orderId,
             customerName:  state.name,
             paymentLabel:  state.payment,
             deliveryLabel: state.delivery,
-            totalAmount:   state.total,
+            totalAmount,
+            deliveryFee,
+            subtotal,
           })
         }
       })
       .catch(() => {
-        // Graceful fallback to state data
+        const totalAmount = state.total ?? 0
+        const deliveryFee = state.deliveryFee ?? 0
+        const subtotal    = totalAmount - deliveryFee
         setOrder({
           orderId:       state.orderId,
           customerName:  state.name,
           paymentLabel:  state.payment,
           deliveryLabel: state.delivery,
-          totalAmount:   state.total,
+          totalAmount,
+          deliveryFee,
+          subtotal,
         })
       })
       .finally(() => setLoading(false))
@@ -155,9 +169,26 @@ export default function OrderSuccess() {
           <Row label="Paid To Number"  value={order.paymentNumber} />
 
           {/* Financials */}
-          <Row label="Subtotal"      value={`৳${order.subtotal?.toLocaleString()}`} />
-          <Row label="Delivery Fee"  value={`৳${order.deliveryFee?.toLocaleString()}`} />
-          <Row label="Total Bill"    value={`৳${order.totalAmount?.toLocaleString()}`} highlight />
+          <Row label="Delivery Fee Paid"
+               value={order.deliveryFee != null ? `৳${Number(order.deliveryFee).toLocaleString()} ✓ Already Paid` : null}
+               green />
+
+          {/* Big highlighted amount — what customer pays at door */}
+          <div className="px-6 py-4 bg-red/5 border-b border-[#1a1a1a]">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[11px] uppercase tracking-wider2 text-muted mb-1">
+                  Amount to Pay at Door
+                </p>
+                <p className="text-[10px] text-muted">
+                  (Delivery ৳{order.deliveryFee ?? 0} already paid via {order.paymentLabel})
+                </p>
+              </div>
+              <p className="font-display font-extrabold text-[28px] tracking-[-0.03em] text-white">
+                ৳{(order.subtotal ?? (order.totalAmount - (order.deliveryFee ?? 0)))?.toLocaleString()}
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* ── Ordered Items ── */}
@@ -179,7 +210,7 @@ export default function OrderSuccess() {
                     <p className="text-[11px] text-muted">Qty: {item.qty} × ৳{item.price?.toLocaleString()}</p>
                   </div>
                   <span className="text-[13px] font-bold text-white flex-shrink-0">
-                    ৳{item.subtotal?.toLocaleString()}
+                    ৳{(item.subtotal ?? (item.price * item.qty))?.toLocaleString()}
                   </span>
                 </div>
               ))}
@@ -195,7 +226,9 @@ export default function OrderSuccess() {
             {[
               'We verify your payment transaction ID',
               'Your order is packed and handed to courier',
-              'You receive delivery within 2–5 working days',
+              `Courier delivers — pay ৳${
+                order.subtotal ?? (order.totalAmount - (order.deliveryFee ?? 0))
+              } at door (delivery already paid)`,
             ].map((step, i) => (
               <div key={i} className="flex items-start gap-3">
                 <span className="w-5 h-5 rounded-full border border-red/40 flex items-center justify-center
@@ -227,14 +260,14 @@ export default function OrderSuccess() {
 }
 
 /* ── Reusable detail row ── */
-function Row({ label, value, highlight, mono, longValue }) {
+function Row({ label, value, highlight, mono, longValue, green }) {
   if (!value) return null
   return (
     <div className={`flex items-start justify-between px-6 py-3.5 border-b border-[#1a1a1a] last:border-0
                      ${highlight ? 'bg-red/5' : ''}`}>
       <span className="text-[12px] text-muted flex-shrink-0 mr-4">{label}</span>
       <span className={`text-right
-        ${highlight ? 'text-white font-bold text-[14px]' : 'text-[13px] font-medium text-off'}
+        ${highlight ? 'text-white font-bold text-[14px]' : green ? 'text-green-400 font-semibold text-[13px]' : 'text-[13px] font-medium text-off'}
         ${mono ? 'font-mono tracking-wider' : ''}
         ${longValue ? 'max-w-[60%] leading-relaxed' : ''}`}>
         {value}

@@ -120,10 +120,11 @@ export default function Checkout() {
           subtotal: item.price * item.qty,
         })),
 
-        // Financials
-        subtotal:    totalAmount,
-        deliveryFee: deliveryFee,
-        totalAmount: totalWithFee,
+        // Financials — clear breakdown for admin
+        subtotal:    totalAmount,          // product price only (e.g. ৳598)
+        deliveryFee: deliveryFee,          // already paid via bKash/Nagad (e.g. ৳130)
+        totalAmount: totalWithFee,         // full order value (e.g. ৳728)
+        codAmount:   totalAmount,          // customer pays at door = product only (delivery already paid)
       }
 
       // Save to Firestore → orders/{orderId}
@@ -133,10 +134,12 @@ export default function Checkout() {
       navigate('/order-success', {
         state: {
           orderId,
-          name:     form.name,
-          payment:  PAYMENT[form.payment].label,
-          delivery: DELIVERY[form.delivery].label,
-          total:    totalWithFee,
+          name:        form.name,
+          payment:     PAYMENT[form.payment].label,
+          delivery:    DELIVERY[form.delivery].label,
+          total:       totalWithFee,
+          subtotal:    totalAmount,
+          deliveryFee: deliveryFee,
         },
       })
     } catch (err) {
@@ -333,25 +336,42 @@ export default function Checkout() {
                 {/* totals */}
                 <div className="px-6 py-5 border-t border-border space-y-3">
                   <div className="flex justify-between text-[13px] text-muted">
-                    <span>Subtotal</span>
+                    <span>Product Subtotal</span>
                     <span className="text-off">৳{totalAmount.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-[13px] text-muted">
-                    <span>Delivery Fee</span>
+                    <span>Delivery Fee <span className="text-[10px]">(advance via {form.payment ? PAYMENT[form.payment].label : 'bKash/Nagad'})</span></span>
                     <span className={form.delivery ? 'text-off' : 'text-muted italic'}>
                       {form.delivery ? `৳${deliveryFee}` : 'Select location'}
                     </span>
                   </div>
+
+                  {/* Total payable now (delivery fee) */}
+                  {form.delivery && form.payment && (
+                    <div className="flex justify-between text-[12px] pt-2 border-t border-border">
+                      <span className="text-green-400 font-semibold">Pay Now (Delivery Only)</span>
+                      <span className="text-green-400 font-bold">৳{deliveryFee}</span>
+                    </div>
+                  )}
+
+                  {/* COD amount */}
+                  {form.delivery && (
+                    <div className="flex justify-between text-[12px]">
+                      <span className="text-muted">Pay at Door (Products)</span>
+                      <span className="text-off font-semibold">৳{totalAmount.toLocaleString()}</span>
+                    </div>
+                  )}
+
                   <div className="flex justify-between font-display font-extrabold text-[18px] tracking-[-0.02em]
                                   text-white pt-3 border-t border-border">
-                    <span>Total</span>
-                    <span>
-                      {form.delivery
-                        ? <>৳{totalAmount.toLocaleString()} <span className="text-[14px] text-muted font-medium">+ ৳{deliveryFee}</span></>
-                        : `৳${totalAmount.toLocaleString()}`
-                      }
-                    </span>
+                    <span>Order Total</span>
+                    <span>৳{totalWithFee.toLocaleString()}</span>
                   </div>
+                  {form.delivery && (
+                    <p className="text-[10px] text-muted leading-relaxed">
+                      ৳{deliveryFee} delivery paid now · ৳{totalAmount.toLocaleString()} paid at door
+                    </p>
+                  )}
                 </div>
 
                 {/* CTA */}
