@@ -39,11 +39,21 @@ export default function AdminUsers() {
     })
   }, [])
 
+  // Re-render every 30s so online/offline status stays current
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => setTick(n => n + 1), 30000)
+    return () => clearInterval(t)
+  }, [])
+
   const isOnline = (uid) => {
     const p = presence[uid]
     if (!p?.lastSeen) return false
+    // If online flag explicitly false, offline
+    if (p.online === false) return false
     const last = p.lastSeen?.toDate ? p.lastSeen.toDate() : new Date(p.lastSeen)
-    return (Date.now() - last.getTime()) < 3 * 60 * 1000 // online if seen < 3min ago
+    // Online if seen within last 2 minutes
+    return (Date.now() - last.getTime()) < 2 * 60 * 1000
   }
 
   const userOrders = (uid) => orders.filter(o => o.userId === uid)

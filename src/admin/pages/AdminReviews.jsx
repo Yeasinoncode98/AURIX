@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
-  collection, collectionGroup, onSnapshot, query, orderBy,
-  doc, updateDoc, addDoc, serverTimestamp
+  collection, onSnapshot, query, orderBy,
+  doc, updateDoc, serverTimestamp
 } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { useAuth } from '../../context/AuthContext'
@@ -24,19 +24,42 @@ export default function AdminReviews() {
     )
   }, [])
 
-  // Load all reviews from subcollection reviews under each product
+  // Load all reviews from each product's reviews subcollection
   useEffect(() => {
-    // Use collectionGroup to get all reviews across all products
-    const q = query(collectionGroup(db, 'reviews'), orderBy('createdAt', 'desc'))
-    return onSnapshot(q, snap => {
-      setReviews(snap.docs.map(d => ({
-        id: d.id,
-        productId: d.ref.parent.parent.id,
-        ...d.data(),
-      })))
-      setLoading(false)
+    if (products.length === 0) {
+      setLoading(false)  // no products = no reviews, stop spinner
+      return
+    }
+
+    const unsubs = []
+    const allReviews = {}
+
+    products.forEach(product => {
+      const q = query(
+        collection(db, 'products', product.id, 'reviews'),
+        orderBy('createdAt', 'desc')
+      )
+      const unsub = onSnapshot(q, snap => {
+        allReviews[product.id] = snap.docs.map(d => ({
+          id: d.id,
+          productId: product.id,
+          ...d.data(),
+        }))
+        // Flatten all reviews, sort by newest
+        const flat = Object.values(allReviews).flat()
+        flat.sort((a, b) => {
+          const at = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0)
+          const bt = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0)
+          return bt - at
+        })
+        setReviews(flat)
+        setLoading(false)
+      }, () => setLoading(false))
+      unsubs.push(unsub)
     })
-  }, [])
+
+    return () => unsubs.forEach(u => u())
+  }, [products])
 
   const productName = (id) => products.find(p => p.id === id)?.name || id
 

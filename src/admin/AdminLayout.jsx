@@ -21,15 +21,26 @@ const NAV = [
 ]
 
 export default function AdminLayout() {
-  const { user, profile, logout, isAdmin } = useAuth()
+  const { user, profile, logout, isAdmin, loading } = useAuth()
   const navigate  = useNavigate()
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  // Redirect if not admin
+  // Wait for Firebase auth to restore session before redirecting
   useEffect(() => {
+    if (loading) return          // still loading — do nothing
     if (!user || !isAdmin) navigate('/login', { replace: true })
-  }, [user, isAdmin, navigate])
+  }, [user, isAdmin, loading, navigate])
+
+  // Show spinner while Firebase restores session
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-[#080808]">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 border-2 border-[#222] border-t-red rounded-full animate-spin"/>
+        <p className="text-[12px] text-muted">Restoring session...</p>
+      </div>
+    </div>
+  )
 
   if (!user || !isAdmin) return null
 

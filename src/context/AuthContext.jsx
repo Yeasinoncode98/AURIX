@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState, useRef } from 'react'
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -17,6 +17,31 @@ export function AuthProvider({ children }) {
   const [user,    setUser]    = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const presenceInterval      = useRef(null)
+
+  // ── Update presence every 60s while logged in ──
+  const updatePresence = (uid) => {
+    setDoc(doc(db, 'presence', uid), {
+      lastSeen: serverTimestamp(),
+      online: true,
+    }, { merge: true }).catch(() => {})
+  }
+
+  const startPresence = (uid) => {
+    updatePresence(uid) // immediate
+    clearInterval(presenceInterval.current)
+    presenceInterval.current = setInterval(() => updatePresence(uid), 60000)
+  }
+
+  const stopPresence = (uid) => {
+    clearInterval(presenceInterval.current)
+    if (uid) {
+      setDoc(doc(db, 'presence', uid), {
+        lastSeen: serverTimestamp(),
+        online: false,
+      }, { merge: true }).catch(() => {})
+    }
+  }
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -24,12 +49,17 @@ export function AuthProvider({ children }) {
       if (firebaseUser) {
         const snap = await getDoc(doc(db, 'users', firebaseUser.uid))
         setProfile(snap.exists() ? snap.data() : null)
+        startPresence(firebaseUser.uid)
       } else {
+        if (user?.uid) stopPresence(user.uid)
         setProfile(null)
       }
       setLoading(false)
     })
-    return unsub
+    return () => {
+      unsub()
+      clearInterval(presenceInterval.current)
+    }
   }, [])
 
   /* ── register (customer only) ── */
@@ -83,7 +113,10 @@ export function AuthProvider({ children }) {
   }
 
   /* ── logout ── */
-  const logout = () => signOut(auth)
+  const logout = async () => {
+    if (user?.uid) stopPresence(user.uid)
+    return signOut(auth)
+  }
 
   /* ── update profile (name, phone, photoURL) ── */
   const updateUserProfile = async (data) => {
