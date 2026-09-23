@@ -20,7 +20,8 @@ export default function AdminReviews() {
   // Load products for name lookup
   useEffect(() => {
     return onSnapshot(collection(db, 'products'), snap =>
-      setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+      // docId = actual Firestore string document ID (slug like "aurix-pro")
+      setProducts(snap.docs.map(d => ({ ...d.data(), docId: d.id })))
     )
   }, [])
 
@@ -35,14 +36,17 @@ export default function AdminReviews() {
     const allReviews = {}
 
     products.forEach(product => {
+      // product.id could be numeric — use docId (string slug) for Firestore path
+      const pid = String(product.docId || product.slug || product.id)
       const q = query(
-        collection(db, 'products', product.id, 'reviews'),
+        collection(db, 'products', pid, 'reviews'),
         orderBy('createdAt', 'desc')
       )
       const unsub = onSnapshot(q, snap => {
-        allReviews[product.id] = snap.docs.map(d => ({
+        allReviews[pid] = snap.docs.map(d => ({
           id: d.id,
-          productId: product.id,
+          productId: pid,
+          productName: product.name,
           ...d.data(),
         }))
         // Flatten all reviews, sort by newest
@@ -61,7 +65,7 @@ export default function AdminReviews() {
     return () => unsubs.forEach(u => u())
   }, [products])
 
-  const productName = (id) => products.find(p => p.id === id)?.name || id
+  const productName = (id) => products.find(p => p.docId === id)?.name || id
 
   const filtered = filter === 'unanswered'
     ? reviews.filter(r => !r.adminReply)
