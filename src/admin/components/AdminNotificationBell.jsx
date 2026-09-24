@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { collection, onSnapshot } from 'firebase/firestore'
+import { collection, onSnapshot, collectionGroup } from 'firebase/firestore'
 import { db } from '../../firebase'
 
 export default function AdminNotificationBell() {
@@ -8,7 +8,8 @@ export default function AdminNotificationBell() {
   const [seen,          setSeen]          = useState(false)
   const [toasts,        setToasts]        = useState([])
   const ref         = useRef(null)
-  const knownIds    = useRef(null)   // null = not yet initialized
+  const knownIds    = useRef(null)
+  const knownReviewIds = useRef(null) // track review notifications
 
   useEffect(() => {
     // Listen to ALL orders — no where/orderBy = no index needed
@@ -58,6 +59,41 @@ export default function AdminNotificationBell() {
     return unsub
   }, [])
 
+  // ── Real-time review notifications ──
+  useEffect(() => {
+    // Listen to all reviews via collectionGroup — no index needed since no orderBy
+    const unsub = onSnapshot(collectionGroup(db, 'reviews'), snap => {
+      const currentIds = new Set(snap.docs.map(d => d.id))
+
+      if (knownReviewIds.current === null) {
+        knownReviewIds.current = currentIds
+        return
+      }
+
+      // New reviews since last snapshot
+      snap.docs.forEach(d => {
+        if (!knownReviewIds.current.has(d.id)) {
+          const review = d.data()
+          const productId = d.ref.parent.parent.id
+          const tid = 'review_' + d.id + '_' + Date.now()
+          setToasts(prev => [...prev, {
+            tid,
+            type:    'review',
+            name:    review.userName || 'Customer',
+            rating:  review.rating || 5,
+            comment: review.comment?.slice(0, 50) || '',
+            product: productId,
+          }])
+          setSeen(false)
+          setTimeout(() => setToasts(prev => prev.filter(t => t.tid !== tid)), 6000)
+        }
+      })
+
+      knownReviewIds.current = currentIds
+    })
+    return unsub
+  }, [])
+
   // Close on outside click
   useEffect(() => {
     const fn = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
@@ -80,27 +116,58 @@ export default function AdminNotificationBell() {
                        rounded-[8px] border shadow-2xl"
             style={{
               background:  'linear-gradient(135deg,#161616,#0f0f0f)',
-              borderColor: 'rgba(193,18,31,0.35)',
-              boxShadow:   '0 8px 32px rgba(193,18,31,0.2)',
+              borderColor: t.type === 'review' ? 'rgba(59,130,246,0.35)' : 'rgba(193,18,31,0.35)',
+              boxShadow:   t.type === 'review' ? '0 8px 32px rgba(59,130,246,0.15)' : '0 8px 32px rgba(193,18,31,0.2)',
               animation:   'notif-in 0.3s ease forwards',
             }}>
             <div className="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center mt-0.5"
-              style={{ background:'rgba(193,18,31,0.12)', border:'1px solid rgba(193,18,31,0.3)' }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C1121F" strokeWidth="2">
-                <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
-                <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
-              </svg>
+              style={{
+                background: t.type === 'review' ? 'rgba(59,130,246,0.12)' : 'rgba(193,18,31,0.12)',
+                border: t.type === 'review' ? '1px solid rgba(59,130,246,0.3)' : '1px solid rgba(193,18,31,0.3)',
+              }}>
+              {t.type === 'review' ? (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              ) : (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C1121F" strokeWidth="2">
+                  <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+                  <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+                </svg>
+              )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-black text-red uppercase tracking-widest leading-none">
-                🔔 New Order Received!
-              </p>
-              <p className="text-[13px] font-bold text-white mt-1.5 truncate">{t.name}</p>
-              <p className="text-[11px] text-muted mt-0.5 font-mono">{t.orderId}</p>
-              <p className="text-[11px] text-off font-semibold mt-0.5">
-                ৳{Number(t.total).toLocaleString()}
-                {t.phone ? <span className="text-muted font-normal"> · {t.phone}</span> : null}
-              </p>
+              {t.type === 'review' ? (
+                <>
+                  <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest leading-none">
+                    ⭐ New Review!
+                  </p>
+                  <p className="text-[13px] font-bold text-white mt-1.5 truncate">{t.name}</p>
+                  <div className="flex gap-0.5 mt-0.5">
+                    {[1,2,3,4,5].map(i => (
+                      <svg key={i} width="9" height="9" viewBox="0 0 24 24"
+                        fill={i <= t.rating ? '#C1121F' : 'none'} stroke="#C1121F" strokeWidth="1.5">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                      </svg>
+                    ))}
+                  </div>
+                  {t.comment && (
+                    <p className="text-[11px] text-muted mt-0.5 truncate">"{t.comment}"</p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p className="text-[10px] font-black text-red uppercase tracking-widest leading-none">
+                    🔔 New Order Received!
+                  </p>
+                  <p className="text-[13px] font-bold text-white mt-1.5 truncate">{t.name}</p>
+                  <p className="text-[11px] text-muted mt-0.5 font-mono">{t.orderId}</p>
+                  <p className="text-[11px] text-off font-semibold mt-0.5">
+                    ৳{Number(t.total).toLocaleString()}
+                    {t.phone ? <span className="text-muted font-normal"> · {t.phone}</span> : null}
+                  </p>
+                </>
+              )}
             </div>
             <button onClick={() => dismiss(t.tid)}
               className="text-muted hover:text-white flex-shrink-0 mt-0.5 transition-colors">

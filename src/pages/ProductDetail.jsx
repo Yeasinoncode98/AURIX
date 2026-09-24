@@ -915,6 +915,7 @@ function ReviewSection({ slug }) {
 
   return (
     <section
+      id="review-section"
       className="section-wrap border-t border-border"
       style={{ background: "#080808" }}
     >
