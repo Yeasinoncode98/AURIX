@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { collection, onSnapshot, collectionGroup } from 'firebase/firestore'
+import { collection, onSnapshot } from 'firebase/firestore'
 import { db } from '../../firebase'
 
 export default function AdminNotificationBell() {
@@ -61,8 +61,8 @@ export default function AdminNotificationBell() {
 
   // ── Real-time review notifications ──
   useEffect(() => {
-    // Listen to all reviews via collectionGroup — no index needed since no orderBy
-    const unsub = onSnapshot(collectionGroup(db, 'reviews'), snap => {
+    // Listen to top-level reviews collection — no index needed
+    const unsub = onSnapshot(collection(db, 'reviews'), snap => {
       const currentIds = new Set(snap.docs.map(d => d.id))
 
       if (knownReviewIds.current === null) {
@@ -70,19 +70,17 @@ export default function AdminNotificationBell() {
         return
       }
 
-      // New reviews since last snapshot
       snap.docs.forEach(d => {
         if (!knownReviewIds.current.has(d.id)) {
           const review = d.data()
-          const productId = d.ref.parent.parent.id
           const tid = 'review_' + d.id + '_' + Date.now()
           setToasts(prev => [...prev, {
             tid,
             type:    'review',
             name:    review.userName || 'Customer',
-            rating:  review.rating || 5,
+            rating:  review.rating  || 5,
             comment: review.comment?.slice(0, 50) || '',
-            product: productId,
+            product: review.productId || '',
           }])
           setSeen(false)
           setTimeout(() => setToasts(prev => prev.filter(t => t.tid !== tid)), 6000)

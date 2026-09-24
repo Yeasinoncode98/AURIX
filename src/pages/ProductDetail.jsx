@@ -183,7 +183,16 @@ export default function ProductDetail() {
   const [cartOpen, setCartOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("specs");
   const [visible, setVisible] = useState(false);
+  const [reviewCount, setReviewCount] = useState(0);
   const imgRef = useRef(null);
+
+  // Live review count
+  useEffect(() => {
+    if (!slug) return
+    return onSnapshot(collection(db, 'products', slug, 'reviews'), snap => {
+      setReviewCount(snap.size)
+    })
+  }, [slug])
 
   useEffect(() => {
     setLoading(true);
@@ -706,12 +715,12 @@ export default function ProductDetail() {
                     }`}
                 >
                   {label}
-                  {key === "reviews" && product.reviews > 0 && (
+                  {key === "reviews" && reviewCount > 0 && (
                     <span
                       className="ml-1.5 px-1.5 py-0.5 bg-red/20 text-red text-[9px]
                                      font-bold rounded-full border border-red/30"
                     >
-                      {product.reviews}
+                      {reviewCount}
                     </span>
                   )}
                 </button>
@@ -900,6 +909,19 @@ function ReviewSection({ slug }) {
           "Customer",
         userEmail: user.email,
         userId: user.uid,
+        productId: slug,
+        createdAt: serverTimestamp(),
+      });
+      // Mirror to top-level reviews collection — for admin bell notifications (no index needed)
+      await addDoc(collection(db, "reviews"), {
+        rating,
+        comment: comment.trim(),
+        userName:
+          profile?.name ||
+          user.displayName ||
+          user.email?.split("@")[0] ||
+          "Customer",
+        productId: slug,
         createdAt: serverTimestamp(),
       });
       setRating(0);

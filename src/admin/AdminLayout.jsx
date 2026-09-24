@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { collection, onSnapshot } from 'firebase/firestore'
+import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import AdminNotificationBell from './components/AdminNotificationBell'
 import AdminBDClock from './components/AdminBDClock'
@@ -25,6 +27,25 @@ export default function AdminLayout() {
   const navigate  = useNavigate()
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [unseenReviews, setUnseenReviews] = useState(0)  // only NEW reviews since last visit
+  const prevReviewCount = useRef(null)
+
+  // Track only NEW reviews since admin last visited Reviews page
+  useEffect(() => {
+    return onSnapshot(collection(db, 'reviews'), snap => {
+      const count = snap.size
+      if (prevReviewCount.current === null) {
+        // First load — baseline, no badge
+        prevReviewCount.current = count
+        return
+      }
+      if (count > prevReviewCount.current) {
+        // New reviews arrived
+        setUnseenReviews(n => n + (count - prevReviewCount.current))
+      }
+      prevReviewCount.current = count
+    })
+  }, [])
 
   // Wait for Firebase auth to restore session before redirecting
   useEffect(() => {
@@ -89,7 +110,10 @@ export default function AdminLayout() {
               key={to}
               to={to}
               end={to === '/admin'}
-              onClick={() => setMobileOpen(false)}
+              onClick={() => {
+                setMobileOpen(false)
+                if (to === '/admin/reviews') setUnseenReviews(0)
+              }}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-[6px] text-[12px] font-medium
                  transition-all duration-150 group relative
@@ -102,7 +126,17 @@ export default function AdminLayout() {
               {({ isActive }) => (
                 <>
                   <Icon size={16} active={isActive} />
-                  {!collapsed && <span className="truncate">{label}</span>}
+                  {!collapsed && (
+                    <span className="truncate flex items-center gap-1.5">
+                      {label}
+                      {to === '/admin/reviews' && unseenReviews > 0 && (
+                        <span className="px-1.5 py-0.5 bg-red/20 text-red text-[9px]
+                                         font-black rounded-full border border-red/30 leading-none">
+                          {unseenReviews}
+                        </span>
+                      )}
+                    </span>
+                  )}
                   {/* Tooltip when collapsed */}
                   {collapsed && (
                     <span className="absolute left-full ml-3 px-2 py-1 bg-[#1a1a1a] border border-[#2a2a2a]
