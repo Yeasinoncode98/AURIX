@@ -5,10 +5,15 @@ import {
   getDoc,
   collection,
   getDocs,
+  addDoc,
   orderBy,
   query,
+  onSnapshot,
+  serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase";
+import { useAuth } from "../context/AuthContext";
+// import { db } from "../firebase";
 import { useCart } from "../context/CartContext";
 import CartDrawer from "../components/CartDrawer";
 
@@ -817,6 +822,346 @@ export default function ProductDetail() {
           </section>
         )}
       </main>
+      <ReviewSection slug={slug} />
     </>
+  );
+}
+
+/* ══ Review Section ══ */
+function ReviewSection({ slug }) {
+  const { user, profile } = useAuth();
+  const [reviews, setReviews] = useState([]);
+  const [rating, setRating] = useState(0);
+  const [hovered, setHovered] = useState(0);
+  const [comment, setComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
+
+  // Load reviews real-time
+  useEffect(() => {
+    if (!slug) return;
+    const q = query(
+      collection(db, "products", slug, "reviews"),
+      orderBy("createdAt", "desc"),
+    );
+    return onSnapshot(q, (snap) =>
+      setReviews(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+    );
+  }, [slug]);
+
+  const avgRating = reviews.length
+    ? (
+        reviews.reduce((s, r) => s + (r.rating || 0), 0) / reviews.length
+      ).toFixed(1)
+    : 0;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!user) {
+      setError("Please sign in to leave a review");
+      return;
+    }
+    if (rating === 0) {
+      setError("Please select a rating");
+      return;
+    }
+    if (!comment.trim()) {
+      setError("Please write your review");
+      return;
+    }
+    setSubmitting(true);
+    setError("");
+    try {
+      await addDoc(collection(db, "products", slug, "reviews"), {
+        rating,
+        comment: comment.trim(),
+        userName:
+          profile?.name ||
+          user.displayName ||
+          user.email?.split("@")[0] ||
+          "Customer",
+        userEmail: user.email,
+        userId: user.uid,
+        createdAt: serverTimestamp(),
+      });
+      setRating(0);
+      setComment("");
+      setSubmitted(true);
+      setTimeout(() => setSubmitted(false), 3000);
+    } catch {
+      setError("Failed to submit review. Try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <section
+      className="section-wrap border-t border-border"
+      style={{ background: "#080808" }}
+    >
+      <div className="container-inner">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
+          <div>
+            <div className="eyebrow mb-2">
+              <span className="eyebrow-line" />
+              <span className="eyebrow-text">Customer Reviews</span>
+            </div>
+            <h2 className="font-display font-extrabold text-[28px] tracking-[-0.03em] text-white">
+              What people say
+            </h2>
+          </div>
+          {reviews.length > 0 && (
+            <div className="flex items-center gap-3">
+              <div>
+                <p className="font-display font-extrabold text-[40px] tracking-[-0.04em] text-white leading-none">
+                  {avgRating}
+                </p>
+                <div className="flex gap-0.5 mt-1">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <svg
+                      key={i}
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill={
+                        i <= Math.round(Number(avgRating)) ? "#C1121F" : "none"
+                      }
+                      stroke="#C1121F"
+                      strokeWidth="1.5"
+                    >
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                  ))}
+                </div>
+                <p className="text-[11px] text-muted mt-0.5">
+                  {reviews.length} review{reviews.length !== 1 ? "s" : ""}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-10">
+          {/* ── Reviews list ── */}
+          <div className="space-y-4">
+            {reviews.length === 0 ? (
+              <div
+                className="flex flex-col items-center justify-center py-14 rounded-[8px]
+                              border border-border"
+                style={{ background: "#0e0e0e" }}
+              >
+                <svg
+                  width="36"
+                  height="36"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#333"
+                  strokeWidth="1.2"
+                  className="mb-3"
+                >
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+                <p className="text-muted text-[13px]">
+                  No reviews yet — be the first!
+                </p>
+              </div>
+            ) : (
+              reviews.map((r) => (
+                <div
+                  key={r.id}
+                  className="rounded-[8px] border border-[#1a1a1a] px-5 py-5"
+                  style={{
+                    background: "linear-gradient(160deg,#0e0e0e,#0a0a0a)",
+                  }}
+                >
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-9 h-9 rounded-full flex items-center justify-center
+                                      text-[13px] font-bold text-white flex-shrink-0"
+                        style={{
+                          background: "linear-gradient(135deg,#C1121F,#8b0000)",
+                        }}
+                      >
+                        {(r.userName || "C")[0].toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-[13px] font-semibold text-white">
+                          {r.userName}
+                        </p>
+                        <div className="flex gap-0.5 mt-0.5">
+                          {[1, 2, 3, 4, 5].map((i) => (
+                            <svg
+                              key={i}
+                              width="11"
+                              height="11"
+                              viewBox="0 0 24 24"
+                              fill={i <= (r.rating || 0) ? "#C1121F" : "none"}
+                              stroke="#C1121F"
+                              strokeWidth="1.5"
+                            >
+                              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                            </svg>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <span className="text-[10px] text-muted flex-shrink-0">
+                      {r.createdAt?.toDate
+                        ? r.createdAt
+                            .toDate()
+                            .toLocaleDateString("en-BD", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })
+                        : "—"}
+                    </span>
+                  </div>
+                  <p className="text-[13px] text-off leading-relaxed">
+                    {r.comment}
+                  </p>
+
+                  {/* Admin reply */}
+                  {r.adminReply && (
+                    <div className="mt-3 pl-4 border-l-2 border-red/30">
+                      <p className="text-[10px] font-bold text-red uppercase tracking-wider mb-1">
+                        AURIX Response
+                      </p>
+                      <p className="text-[12px] text-off leading-relaxed">
+                        {r.adminReply}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* ── Write review ── */}
+          <div className="lg:sticky lg:top-[calc(var(--nav-h)+24px)]">
+            <div
+              className="rounded-[8px] border border-[#1a1a1a] overflow-hidden"
+              style={{ background: "linear-gradient(160deg,#0e0e0e,#0a0a0a)" }}
+            >
+              <div className="px-5 py-4 border-b border-[#1a1a1a]">
+                <h3 className="font-display font-bold text-[16px] tracking-[-0.02em] text-white">
+                  Write a Review
+                </h3>
+                {!user && (
+                  <p className="text-[11px] text-muted mt-1">
+                    <Link to="/login" className="text-red hover:underline">
+                      Sign in
+                    </Link>{" "}
+                    to leave a review
+                  </p>
+                )}
+              </div>
+
+              <form onSubmit={handleSubmit} className="px-5 py-5 space-y-4">
+                {/* Star rating */}
+                <div>
+                  <p className="text-[11px] text-muted uppercase tracking-wider2 mb-2">
+                    Your Rating *
+                  </p>
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onMouseEnter={() => setHovered(i)}
+                        onMouseLeave={() => setHovered(0)}
+                        onClick={() => setRating(i)}
+                        className="transition-transform duration-100 hover:scale-110"
+                      >
+                        <svg
+                          width="28"
+                          height="28"
+                          viewBox="0 0 24 24"
+                          fill={(hovered || rating) >= i ? "#C1121F" : "none"}
+                          stroke="#C1121F"
+                          strokeWidth="1.5"
+                        >
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
+                      </button>
+                    ))}
+                    {rating > 0 && (
+                      <span className="text-[12px] text-muted self-center ml-2">
+                        {
+                          ["", "Poor", "Fair", "Good", "Great", "Excellent"][
+                            rating
+                          ]
+                        }
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Comment */}
+                <div>
+                  <p className="text-[11px] text-muted uppercase tracking-wider2 mb-2">
+                    Your Review *
+                  </p>
+                  <textarea
+                    rows={4}
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="Share your experience with this product..."
+                    disabled={!user}
+                    className="w-full bg-[#111] border border-[#1a1a1a] rounded-[4px] px-4 py-3
+                               text-[13px] text-white placeholder-muted outline-none resize-none
+                               focus:border-[#333] transition-colors duration-200
+                               disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                </div>
+
+                {error && <p className="text-[11px] text-red">{error}</p>}
+
+                {submitted && (
+                  <div
+                    className="flex items-center gap-2 px-3 py-2.5 rounded-[6px]
+                                  bg-green-500/10 border border-green-500/20"
+                  >
+                    <svg
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#22c55e"
+                      strokeWidth="2.5"
+                    >
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    <p className="text-[12px] text-green-400 font-semibold">
+                      Review submitted! Thank you.
+                    </p>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={submitting || !user}
+                  className="w-full btn-primary justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ padding: "12px 20px", fontSize: "12px" }}
+                >
+                  {submitting ? (
+                    <span className="flex items-center gap-2">
+                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Submitting...
+                    </span>
+                  ) : (
+                    "Submit Review"
+                  )}
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }

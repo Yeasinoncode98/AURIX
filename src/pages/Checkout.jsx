@@ -377,10 +377,75 @@ export default function Checkout() {
 
                 {/* totals */}
                 <div className="px-6 py-5 border-t border-border space-y-3">
+
+                  {/* Coupon input */}
+                  <div className="pb-3 border-b border-border">
+                    {couponApplied ? (
+                      <div className="flex items-center justify-between px-3 py-2.5 rounded-[6px]
+                                      bg-green-500/10 border border-green-500/20">
+                        <div className="flex items-center gap-2">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5">
+                            <polyline points="20 6 9 17 4 12"/>
+                          </svg>
+                          <div>
+                            <p className="text-[12px] font-bold text-green-400">
+                              {couponApplied.code} applied!
+                            </p>
+                            <p className="text-[10px] text-green-600">
+                              {couponApplied.type === 'percent'
+                                ? `${couponApplied.value}% off`
+                                : `৳${couponApplied.value} off`
+                              } · saving ৳{couponApplied.discount.toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                        <button onClick={removeCoupon} type="button"
+                          className="text-[10px] text-muted hover:text-red transition-colors">
+                          Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Coupon code"
+                          value={couponCode}
+                          onChange={e => { setCouponCode(e.target.value.toUpperCase()); setCouponError('') }}
+                          onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), applyCoupon())}
+                          className="flex-1 bg-[#111] border border-border rounded-[4px] px-3 py-2
+                                     text-[13px] text-white placeholder-muted outline-none
+                                     focus:border-[#444] font-mono tracking-wider uppercase"
+                        />
+                        <button
+                          type="button"
+                          onClick={applyCoupon}
+                          disabled={couponLoading}
+                          className="px-4 py-2 bg-[#1a1a1a] border border-border rounded-[4px]
+                                     text-[11px] font-semibold text-off hover:text-white
+                                     hover:border-[#444] transition-all duration-150 disabled:opacity-50
+                                     flex-shrink-0">
+                          {couponLoading ? '...' : 'Apply'}
+                        </button>
+                      </div>
+                    )}
+                    {couponError && (
+                      <p className="text-[11px] text-red mt-1.5">{couponError}</p>
+                    )}
+                  </div>
+
                   <div className="flex justify-between text-[13px] text-muted">
                     <span>Product Subtotal</span>
                     <span className="text-off">৳{totalAmount.toLocaleString()}</span>
                   </div>
+
+                  {/* Discount row */}
+                  {couponApplied && (
+                    <div className="flex justify-between text-[13px]">
+                      <span className="text-green-400">Discount ({couponApplied.code})</span>
+                      <span className="text-green-400 font-semibold">− ৳{couponApplied.discount.toLocaleString()}</span>
+                    </div>
+                  )}
+
                   <div className="flex justify-between text-[13px] text-muted">
                     <span>Delivery Fee <span className="text-[10px]">(advance via {form.payment ? PAYMENT[form.payment].label : 'bKash/Nagad'})</span></span>
                     <span className={form.delivery ? 'text-off' : 'text-muted italic'}>
@@ -388,7 +453,7 @@ export default function Checkout() {
                     </span>
                   </div>
 
-                  {/* Total payable now (delivery fee) */}
+                  {/* Pay now */}
                   {form.delivery && form.payment && (
                     <div className="flex justify-between text-[12px] pt-2 border-t border-border">
                       <span className="text-green-400 font-semibold">Pay Now (Delivery Only)</span>
@@ -396,22 +461,29 @@ export default function Checkout() {
                     </div>
                   )}
 
-                  {/* COD amount */}
+                  {/* Pay at door */}
                   {form.delivery && (
                     <div className="flex justify-between text-[12px]">
                       <span className="text-muted">Pay at Door (Products)</span>
-                      <span className="text-off font-semibold">৳{totalAmount.toLocaleString()}</span>
+                      <span className="text-off font-semibold">৳{discountedAmount.toLocaleString()}</span>
                     </div>
                   )}
 
                   <div className="flex justify-between font-display font-extrabold text-[18px] tracking-[-0.02em]
                                   text-white pt-3 border-t border-border">
                     <span>Order Total</span>
-                    <span>৳{totalWithFee.toLocaleString()}</span>
+                    <span className="flex items-baseline gap-2">
+                      {couponApplied && (
+                        <span className="text-[13px] text-muted line-through font-normal">
+                          ৳{(totalAmount + deliveryFee).toLocaleString()}
+                        </span>
+                      )}
+                      ৳{totalWithFee.toLocaleString()}
+                    </span>
                   </div>
                   {form.delivery && (
                     <p className="text-[10px] text-muted leading-relaxed">
-                      ৳{deliveryFee} delivery paid now · ৳{totalAmount.toLocaleString()} paid at door
+                      ৳{deliveryFee} delivery paid now · ৳{discountedAmount.toLocaleString()} paid at door
                     </p>
                   )}
                 </div>
