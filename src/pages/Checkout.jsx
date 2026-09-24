@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { collection, doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
@@ -48,15 +48,54 @@ export default function Checkout() {
   const [errors, setErrors] = useState({})
   const [placing, setPlacing] = useState(false)
 
+  /* ── Coupon state ── */
+  const [couponCode,    setCouponCode]    = useState('')
+  const [couponApplied, setCouponApplied] = useState(null)  // { code, type, value, discount }
+  const [couponLoading, setCouponLoading] = useState(false)
+  const [couponError,   setCouponError]   = useState('')
+
+  /* ── Apply coupon ── */
+  const applyCoupon = async () => {
+    if (!couponCode.trim()) { setCouponError('Enter a coupon code'); return }
+    setCouponLoading(true)
+    setCouponError('')
+    try {
+      const snap = await getDoc(doc(db, 'coupons', couponCode.trim().toUpperCase()))
+      if (!snap.exists()) { setCouponError('Invalid coupon code'); setCouponLoading(false); return }
+      const c = snap.data()
+      if (!c.active) { setCouponError('This coupon is no longer active'); setCouponLoading(false); return }
+      if (c.minOrder && totalAmount < c.minOrder) {
+        setCouponError(`Minimum order ৳${c.minOrder} required for this coupon`)
+        setCouponLoading(false); return
+      }
+      const discount = c.type === 'percent'
+        ? Math.round(totalAmount * c.value / 100)
+        : Math.min(c.value, totalAmount)
+      setCouponApplied({ code: c.code, type: c.type, value: c.value, discount })
+    } catch {
+      setCouponError('Failed to apply coupon. Try again.')
+    } finally {
+      setCouponLoading(false)
+    }
+  }
+
+  const removeCoupon = () => {
+    setCouponApplied(null)
+    setCouponCode('')
+    setCouponError('')
+  }
+
   const set = (k, v) => {
     setForm(f => ({ ...f, [k]: v }))
     if (errors[k]) setErrors(e => ({ ...e, [k]: '' }))
   }
 
   /* ── derived ── */
-  const deliveryFee  = DELIVERY[form.delivery]?.fee ?? 0
-  const totalWithFee = totalAmount + deliveryFee
-  const trxLen       = PAYMENT[form.payment]?.trxLen ?? 0
+  const deliveryFee    = DELIVERY[form.delivery]?.fee ?? 0
+  const discount       = couponApplied?.discount ?? 0
+  const discountedAmount = totalAmount - discount
+  const totalWithFee   = discountedAmount + deliveryFee
+  const trxLen         = PAYMENT[form.payment]?.trxLen ?? 0
 
   /* ── validation ── */
   const validate = () => {
@@ -122,9 +161,12 @@ export default function Checkout() {
 
         // Financials — clear breakdown for admin
         subtotal:    totalAmount,          // product price only (e.g. ৳598)
+        discount:    discount,             // coupon discount applied
+        discountedAmount: discountedAmount, // after coupon
+        couponCode:  couponApplied?.code || null,
         deliveryFee: deliveryFee,          // already paid via bKash/Nagad (e.g. ৳130)
-        totalAmount: totalWithFee,         // full order value (e.g. ৳728)
-        codAmount:   totalAmount,          // customer pays at door = product only (delivery already paid)
+        totalAmount: totalWithFee,         // final total after discount + delivery
+        codAmount:   discountedAmount,     // customer pays at door
       }
 
       // Save to Firestore → orders/{orderId}

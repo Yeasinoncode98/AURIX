@@ -156,10 +156,10 @@ export default function Navbar() {
               ${hamburgerOpen ? 'w-5 -translate-y-[6.5px] -rotate-45' : 'w-5'}`}/>
           </button>
 
-          {/* ── Logo — center on mobile, left on desktop ── */}
+          {/* ── Logo — absolute center on mobile, static on desktop ── */}
           <Link to="/"
             className="font-display text-[20px] font-extrabold tracking-[-0.02em] text-white no-underline
-                       md:static absolute left-1/2 md:left-auto md:transform-none -translate-x-1/2">
+                       absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0 pointer-events-auto">
             AUR<span className="text-red">I</span>X
           </Link>
 
@@ -359,20 +359,8 @@ export default function Navbar() {
                     ${drawerOpen ? 'translate-x-0' : '-translate-x-full'}`}
         style={{ background: '#080808', borderRight: '1px solid #1a1a1a' }}>
 
-        {/* Drawer header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#1a1a1a]"
-          style={{ minHeight: 'var(--nav-h)' }}>
-          <Link to="/" onClick={toggleDrawer}
-            className="font-display text-[18px] font-extrabold tracking-[-0.02em] text-white no-underline">
-            AUR<span className="text-red">I</span>X
-          </Link>
-          <button onClick={toggleDrawer}
-            className="w-8 h-8 flex items-center justify-center text-muted hover:text-white transition-colors">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </button>
-        </div>
+        {/* Drawer header — same height as navbar, empty (hamburger in navbar acts as close) */}
+        <div className="border-b border-[#1a1a1a]" style={{ minHeight: 'var(--nav-h)' }} />
 
         {/* User info */}
         {user && (

@@ -82,7 +82,7 @@
     @apply max-w-[1280px] mx-auto px-10;
   }
   @media (max-width: 768px) {
-    .container-inner { @apply px-5; }
+    .container-inner { @apply px-4; }
   }
 
   /* ── Spec rows ── */

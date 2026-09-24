@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
-  collection, onSnapshot, query, orderBy,
-  doc, updateDoc, serverTimestamp, getDocs, where
+  collection, onSnapshot,
+  doc, updateDoc, serverTimestamp
 } from 'firebase/firestore'
 import { db } from '../../firebase'
 import toast from 'react-hot-toast'
@@ -16,9 +16,15 @@ export default function AdminUsers() {
 
   // Real-time users
   useEffect(() => {
-    const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'))
-    return onSnapshot(q, snap => {
-      setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    return onSnapshot(collection(db, 'users'), snap => {
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      // Sort client-side by createdAt newest first
+      data.sort((a, b) => {
+        const at = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0)
+        const bt = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0)
+        return bt - at
+      })
+      setUsers(data)
       setLoading(false)
     })
   }, [])
