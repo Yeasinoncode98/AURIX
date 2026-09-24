@@ -138,12 +138,12 @@ export default function Engineering() {
               <span className="text-[10px] font-semibold tracking-wider3 uppercase text-red flex-shrink-0">Exploded</span>
             </div>
 
-            <div className="flex justify-between items-center text-[11px] text-off">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 text-[11px] text-off">
               <div className="flex items-center gap-2 text-[10px] tracking-wider2 uppercase text-off">
                 <div className="w-[6px] h-[6px] rounded-full bg-red" />
                 {statusText}
               </div>
-              <div className="flex gap-[10px]">
+              <div className="flex gap-[10px] flex-wrap">
                 {[
                   { id: 'btn-normal',  label: 'Assembled', action: () => { stopAutoPlay(); animateTo(0) } },
                   { id: 'btn-explode', label: 'Exploded',  action: () => { stopAutoPlay(); animateTo(TOTAL_FRAMES - 1) } },

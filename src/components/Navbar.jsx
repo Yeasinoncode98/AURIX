@@ -140,12 +140,26 @@ export default function Navbar() {
         role="banner"
       >
         <div className="w-full max-w-[1280px] mx-auto flex items-center justify-between relative">
-          {/* Logo */}
-          <Link
-            to="/"
+
+          {/* ── MOBILE: Hamburger LEFT ── */}
+          <button
+            onClick={toggleDrawer}
+            aria-label="Toggle menu"
+            aria-expanded={drawerOpen}
+            className="md:hidden flex flex-col justify-center items-center gap-[5px] w-9 h-9
+                       bg-transparent border-none cursor-pointer p-1 flex-shrink-0">
+            <span className={`block h-[1.5px] bg-white rounded-full transition-all duration-300 origin-center
+              ${hamburgerOpen ? 'w-5 translate-y-[6.5px] rotate-45' : 'w-5'}`}/>
+            <span className={`block h-[1.5px] bg-white rounded-full transition-all duration-200
+              ${hamburgerOpen ? 'w-0 opacity-0' : 'w-3.5 opacity-100'}`}/>
+            <span className={`block h-[1.5px] bg-white rounded-full transition-all duration-300 origin-center
+              ${hamburgerOpen ? 'w-5 -translate-y-[6.5px] -rotate-45' : 'w-5'}`}/>
+          </button>
+
+          {/* ── Logo — center on mobile, left on desktop ── */}
+          <Link to="/"
             className="font-display text-[20px] font-extrabold tracking-[-0.02em] text-white no-underline
-                       md:static absolute left-1/2 md:left-auto md:transform-none -translate-x-1/2"
-          >
+                       md:static absolute left-1/2 md:left-auto md:transform-none -translate-x-1/2">
             AUR<span className="text-red">I</span>X
           </Link>
 
@@ -181,25 +195,15 @@ export default function Navbar() {
             })}
           </ul>
 
-          {/* Desktop right side */}
-          <div className="hidden md:flex items-center gap-3">
-            {/* Cart icon */}
-            <button
-              onClick={() => setCartOpen(true)}
+          {/* Desktop right side + Mobile right icons */}
+          <div className="flex items-center gap-2 md:gap-3">
+            {/* Cart icon — visible on ALL screens */}
+            <button onClick={() => setCartOpen(true)}
               className="relative w-9 h-9 flex items-center justify-center text-muted hover:text-white transition-colors duration-200"
-              aria-label="Open cart"
-            >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-              >
-                <circle cx="9" cy="21" r="1" />
-                <circle cx="20" cy="21" r="1" />
-                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+              aria-label="Open cart">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
               </svg>
               {totalQty > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-red text-white text-[9px] font-bold flex items-center justify-center">
@@ -208,9 +212,9 @@ export default function Navbar() {
               )}
             </button>
 
-            {/* Auth — avatar dropdown or sign in */}
+            {/* Auth — avatar dropdown or sign in — desktop only */}
             {user ? (
-              <div className="relative" ref={menuRef}>
+              <div className="hidden md:block relative" ref={menuRef}>
                 <button
                   onClick={() => setUserMenuOpen((o) => !o)}
                   className="flex items-center gap-2 px-2 py-1.5 rounded-[6px] hover:bg-white/5
@@ -327,148 +331,117 @@ export default function Navbar() {
                 </div>
               </div>
             ) : (
-              <Link
-                to="/login"
-                className="btn-ghost"
-                style={{ padding: "8px 16px", fontSize: "11px" }}
-              >
+              <Link to="/login" className="hidden md:block btn-ghost"
+                style={{ padding: "8px 16px", fontSize: "11px" }}>
                 Sign In
               </Link>
             )}
 
-            <Link
-              to="/shop"
-              className="btn-primary"
-              style={{ padding: "10px 22px", fontSize: "11px" }}
-            >
+            <Link to="/shop" className="hidden md:block btn-primary"
+              style={{ padding: "10px 22px", fontSize: "11px" }}>
               Order Now
             </Link>
           </div>
-
-          {/* Hamburger */}
-          <button
-            onClick={toggleDrawer}
-            aria-label="Toggle menu"
-            aria-expanded={drawerOpen}
-            className="md:hidden absolute right-0 flex flex-col justify-center items-end gap-[5px] w-10 h-10 bg-transparent border-none cursor-pointer p-1"
-          >
-            <span
-              className={`block h-[1.5px] bg-white rounded-full transition-all duration-300 origin-center
-              ${hamburgerOpen ? "w-5 translate-y-[6.5px] rotate-45" : "w-5"}`}
-            />
-            <span
-              className={`block h-[1.5px] bg-white rounded-full transition-all duration-200
-              ${hamburgerOpen ? "w-0 opacity-0" : "w-3.5 opacity-100"}`}
-            />
-            <span
-              className={`block h-[1.5px] bg-white rounded-full transition-all duration-300 origin-center
-              ${hamburgerOpen ? "w-5 -translate-y-[6.5px] -rotate-45" : "w-5"}`}
-            />
-          </button>
         </div>
       </header>
 
-      {/* Mobile Drawer */}
-      <nav
-        aria-label="Mobile navigation"
-        className={`md:hidden fixed left-0 right-0 z-[999] bg-[rgba(6,6,6,0.98)] backdrop-blur-[20px]
-          border-b border-border flex flex-col transition-all duration-300
-          ${drawerOpen ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 -translate-y-3 pointer-events-none"}`}
-        style={{ top: "var(--nav-h)" }}
-      >
-        {/* User info strip (mobile) */}
+      {/* ── Mobile Left Slide Drawer ── */}
+      {/* Overlay */}
+      {drawerOpen && (
+        <div className="md:hidden fixed inset-0 z-[998] bg-black/60 backdrop-blur-[2px]"
+          onClick={toggleDrawer}/>
+      )}
+
+      {/* Drawer panel — slides from LEFT */}
+      <nav aria-label="Mobile navigation"
+        className={`md:hidden fixed left-0 top-0 h-full w-[280px] z-[999] flex flex-col
+                    transition-transform duration-300 ease-in-out
+                    ${drawerOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        style={{ background: '#080808', borderRight: '1px solid #1a1a1a' }}>
+
+        {/* Drawer header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#1a1a1a]"
+          style={{ minHeight: 'var(--nav-h)' }}>
+          <Link to="/" onClick={toggleDrawer}
+            className="font-display text-[18px] font-extrabold tracking-[-0.02em] text-white no-underline">
+            AUR<span className="text-red">I</span>X
+          </Link>
+          <button onClick={toggleDrawer}
+            className="w-8 h-8 flex items-center justify-center text-muted hover:text-white transition-colors">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        {/* User info */}
         {user && (
-          <div className="flex items-center gap-3 px-6 py-4 border-b border-[#1a1a1a]">
-            <NavAvatar user={user} profile={profile} size={36} />
+          <div className="flex items-center gap-3 px-5 py-4 border-b border-[#1a1a1a]">
+            <NavAvatar user={user} profile={profile} size={36}/>
             <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-semibold text-white truncate">
-                {displayName}
-              </p>
+              <p className="text-[13px] font-semibold text-white truncate">{displayName}</p>
               <p className="text-[10px] text-muted truncate">{user.email}</p>
             </div>
-            <Link
-              to="/profile"
-              onClick={() => {
-                setDrawerOpen(false);
-                setHamburgerOpen(false);
-              }}
-              className="text-[10px] uppercase tracking-wider2 text-muted hover:text-white transition-colors duration-150 no-underline flex-shrink-0"
-            >
+            <Link to="/profile" onClick={toggleDrawer}
+              className="text-[10px] uppercase tracking-wider2 text-muted hover:text-white
+                         transition-colors no-underline flex-shrink-0">
               Edit
             </Link>
           </div>
         )}
 
-        <div className="px-6 pt-4 pb-2">
+        {/* Nav links */}
+        <div className="flex-1 overflow-y-auto py-2">
           {homeLinks.map((l, i) => (
-            <a
-              key={l.href}
-              href={l.href}
-              onClick={(e) => smoothTo(e, l.href)}
-              className="flex items-center justify-between text-[12px] font-semibold tracking-wider2 uppercase
-                         text-off no-underline py-4 border-b border-[#1a1a1a] hover:text-white transition-colors duration-200 group"
-            >
-              <span>{l.label}</span>
-              <span className="text-[#333] text-[10px] group-hover:text-red transition-colors duration-200">
-                0{i + 1}
-              </span>
-            </a>
+            l.isSection ? (
+              <a key={l.href} href={l.href}
+                onClick={e => { smoothTo(e, l.href) }}
+                className="flex items-center justify-between px-5 py-3.5
+                           text-[12px] font-semibold tracking-wider2 uppercase
+                           text-off hover:text-white hover:bg-white/5
+                           no-underline transition-colors duration-150 border-b border-[#111]">
+                <span>{l.label}</span>
+                <span className="text-[10px] text-[#333]">0{i + 1}</span>
+              </a>
+            ) : (
+              <Link key={l.href} to={l.href}
+                onClick={toggleDrawer}
+                className={`flex items-center justify-between px-5 py-3.5
+                            text-[12px] font-semibold tracking-wider2 uppercase
+                            no-underline transition-colors duration-150 border-b border-[#111]
+                            ${location.pathname.startsWith('/shop') ? 'text-red' : 'text-off hover:text-white hover:bg-white/5'}`}>
+                <span>{l.label}</span>
+                <span className="text-[10px] text-[#333]">0{i + 1}</span>
+              </Link>
+            )
           ))}
-          <Link
-            to="/shop"
-            onClick={() => {
-              setDrawerOpen(false);
-              setHamburgerOpen(false);
-            }}
-            className={`flex items-center justify-between text-[12px] font-semibold tracking-wider2 uppercase
-                       no-underline py-4 border-b border-[#1a1a1a] transition-colors duration-200 group
-                       ${location.pathname.startsWith("/shop") ? "text-red" : "text-off hover:text-white"}`}
-          >
-            <span>Shop</span>
-            <span className="text-[#333] text-[10px] group-hover:text-red transition-colors duration-200">
-              0{homeLinks.length + 1}
-            </span>
-          </Link>
         </div>
 
-        <div className="px-6 py-4 space-y-3">
-          <Link
-            to="/shop"
-            onClick={() => {
-              setDrawerOpen(false);
-              setHamburgerOpen(false);
-            }}
-            className="flex items-center justify-center w-full text-[12px] font-semibold tracking-wider2 uppercase
-                       text-white no-underline py-4 bg-red hover:bg-[#a30e19] transition-colors duration-200 rounded-[2px]"
-          >
+        {/* Bottom actions */}
+        <div className="px-5 py-5 space-y-2.5 border-t border-[#1a1a1a]">
+          <Link to="/shop" onClick={toggleDrawer}
+            className="flex items-center justify-center w-full py-3.5
+                       text-[12px] font-bold tracking-wider2 uppercase
+                       text-white no-underline bg-red hover:bg-[#a30e19]
+                       transition-colors duration-200 rounded-[4px]">
             Order Now — ৳449
           </Link>
-          {!user && (
-            <Link
-              to="/login"
-              onClick={() => {
-                setDrawerOpen(false);
-                setHamburgerOpen(false);
-              }}
-              className="flex items-center justify-center w-full text-[12px] font-semibold tracking-wider2 uppercase
-                         text-off no-underline py-3 border border-border hover:border-white hover:text-white
-                         transition-colors duration-200 rounded-[2px]"
-            >
+          {!user ? (
+            <Link to="/login" onClick={toggleDrawer}
+              className="flex items-center justify-center w-full py-3
+                         text-[12px] font-semibold tracking-wider2 uppercase
+                         text-off no-underline border border-[#222]
+                         hover:border-white hover:text-white
+                         transition-colors duration-200 rounded-[4px]">
               Sign In
             </Link>
-          )}
-          {user && (
-            <button
-              onClick={async () => {
-                setDrawerOpen(false);
-                setHamburgerOpen(false);
-                await logout();
-                navigate("/");
-              }}
-              className="flex items-center justify-center w-full text-[12px] font-semibold tracking-wider2 uppercase
-                         text-muted py-3 border border-border hover:border-red hover:text-red
-                         transition-colors duration-200 rounded-[2px] bg-transparent cursor-pointer"
-            >
+          ) : (
+            <button onClick={async () => { toggleDrawer(); await logout(); navigate('/') }}
+              className="flex items-center justify-center w-full py-3
+                         text-[12px] font-semibold tracking-wider2 uppercase
+                         text-muted bg-transparent border border-[#1a1a1a]
+                         hover:border-red hover:text-red
+                         transition-colors duration-200 rounded-[4px] cursor-pointer">
               Sign Out
             </button>
           )}
@@ -477,5 +450,5 @@ export default function Navbar() {
 
       <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
     </>
-  );
+  )
 }
