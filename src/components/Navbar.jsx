@@ -213,10 +213,10 @@ export default function Navbar() {
               </Link>
             )}
 
-            <a href="#cta" onClick={e => smoothTo(e, '#cta')}
+            <Link to="/shop"
               className="btn-primary" style={{ padding: '10px 22px', fontSize: '11px' }}>
               Order Now
-            </a>
+            </Link>
           </div>
 
           {/* Hamburger */}
@@ -275,11 +275,12 @@ export default function Navbar() {
         </div>
 
         <div className="px-6 py-4 space-y-3">
-          <a href="#cta" onClick={e => smoothTo(e, '#cta')}
+          <Link to="/shop"
+            onClick={() => { setDrawerOpen(false); setHamburgerOpen(false) }}
             className="flex items-center justify-center w-full text-[12px] font-semibold tracking-wider2 uppercase
                        text-white no-underline py-4 bg-red hover:bg-[#a30e19] transition-colors duration-200 rounded-[2px]">
             Order Now — ৳449
-          </a>
+          </Link>
           {!user && (
             <Link to="/login"
               onClick={() => { setDrawerOpen(false); setHamburgerOpen(false) }}

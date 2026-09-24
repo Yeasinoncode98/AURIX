@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 export default function CTA() {
   const smoothTo = (e, href) => {
     e.preventDefault()
@@ -39,8 +41,12 @@ export default function CTA() {
         </div>
 
         <div className="flex justify-center gap-4 mb-8">
-          <a href="#" className="btn-primary" style={{ padding: '16px 44px', fontSize: 13 }}>Order AURIX ONE</a>
-          <a href="#engineering" onClick={e => smoothTo(e, '#engineering')} className="btn-ghost" style={{ padding: '16px 44px', fontSize: 13 }}>Review Architecture</a>
+          <Link to="/shop" className="btn-primary" style={{ padding: '16px 44px', fontSize: 13 }}>
+            Shop Now
+          </Link>
+          <a href="#engineering" onClick={e => smoothTo(e, '#engineering')} className="btn-ghost" style={{ padding: '16px 44px', fontSize: 13 }}>
+            Review Architecture
+          </a>
         </div>
 
         <p className="text-[11px] tracking-wider2 uppercase text-muted">

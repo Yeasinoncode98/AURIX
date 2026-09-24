@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { gsap } from 'gsap'
 
 export default function Hero() {
@@ -62,11 +63,11 @@ export default function Hero() {
               Engineered with 40mm graphene drivers, hybrid adaptive noise cancellation, and aircraft-grade aluminium for pure acoustic mastery.
             </p>
             <div className="flex flex-row gap-3 items-stretch mb-12 w-full sm:w-auto justify-center">
-              <a href="#cta" onClick={e => smoothTo(e, '#cta')}
+              <Link to="/shop"
                 className="btn-primary flex-1 sm:flex-none text-center whitespace-nowrap"
                 style={{ minWidth: 0 }}>
                 Order Now — ৳449
-              </a>
+              </Link>
               <a href="#engineering" onClick={e => smoothTo(e, '#engineering')}
                 className="btn-ghost flex-1 sm:flex-none text-center whitespace-nowrap"
                 style={{ minWidth: 0 }}>
