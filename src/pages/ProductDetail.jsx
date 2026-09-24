@@ -685,10 +685,19 @@ export default function ProductDetail() {
               {[
                 ["specs", "Full Specifications"],
                 ["box", "What's In The Box"],
+                ["reviews", "Reviews"],
               ].map(([key, label]) => (
                 <button
                   key={key}
-                  onClick={() => setActiveTab(key)}
+                  onClick={() => {
+                    if (key === "reviews") {
+                      document
+                        .getElementById("review-section")
+                        ?.scrollIntoView({ behavior: "smooth" });
+                    } else {
+                      setActiveTab(key);
+                    }
+                  }}
                   className={`px-6 py-4 text-[11px] font-semibold tracking-wider2 uppercase transition-all duration-200 border-b-2
                     ${
                       activeTab === key
@@ -697,6 +706,14 @@ export default function ProductDetail() {
                     }`}
                 >
                   {label}
+                  {key === "reviews" && product.reviews > 0 && (
+                    <span
+                      className="ml-1.5 px-1.5 py-0.5 bg-red/20 text-red text-[9px]
+                                     font-bold rounded-full border border-red/30"
+                    >
+                      {product.reviews}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -1011,13 +1028,11 @@ function ReviewSection({ slug }) {
                     </div>
                     <span className="text-[10px] text-muted flex-shrink-0">
                       {r.createdAt?.toDate
-                        ? r.createdAt
-                            .toDate()
-                            .toLocaleDateString("en-BD", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                            })
+                        ? r.createdAt.toDate().toLocaleDateString("en-BD", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })
                         : "—"}
                     </span>
                   </div>
