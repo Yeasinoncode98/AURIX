@@ -36,7 +36,7 @@ const inputCls = (err) =>
 
 export default function Checkout() {
   const { items, totalAmount, clear } = useCart()
-  const { currentUser } = useAuth()
+  const { user: currentUser } = useAuth()
   const navigate = useNavigate()
 
   /* ── form state ── */

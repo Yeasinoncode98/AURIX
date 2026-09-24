@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore'
+import { collection, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 
@@ -27,16 +27,22 @@ export default function MyOrders() {
     if (loading) return
     if (!user) { navigate('/login'); return }
 
-    // Real-time listener — no refresh needed
-    const q = query(
-      collection(db, 'orders'),
-      where('userId', '==', user.uid),
-      orderBy('createdAt', 'desc')
-    )
-    const unsub = onSnapshot(q, snap => {
-      setOrders(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    // Load orders — filter client-side by userId OR userEmail
+    const unsub = onSnapshot(collection(db, 'orders'), snap => {
+      const data = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(o => o.userId === user.uid || o.userEmail === user.email)
+      data.sort((a, b) => {
+        const at = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0)
+        const bt = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0)
+        return bt - at
+      })
+      setOrders(data)
       setFetching(false)
-    }, () => setFetching(false))
+    }, (err) => {
+      console.error('MyOrders error:', err)
+      setFetching(false)
+    })
 
     return unsub
   }, [user, loading, navigate])
