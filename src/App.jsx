@@ -10,6 +10,7 @@ import OrderSuccess from './pages/OrderSuccess'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Profile from './pages/Profile'
+import MyOrders from './pages/MyOrders'
 
 // Admin
 import AdminLayout     from './admin/AdminLayout'
@@ -61,6 +62,7 @@ export default function App() {
         <Route path="/login" element={<WithShell><Login /></WithShell>} />
         <Route path="/register" element={<WithShell><Register /></WithShell>} />
         <Route path="/profile" element={<WithShell><Profile /></WithShell>} />
+        <Route path="/my-orders" element={<WithShell><MyOrders /></WithShell>} />
 
         {/* ── Admin routes (no Navbar/Footer — own layout) ── */}
         <Route path="/admin" element={<AdminLayout />}>
