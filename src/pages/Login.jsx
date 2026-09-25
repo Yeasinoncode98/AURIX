@@ -44,14 +44,19 @@ export default function Login() {
       if (tab === 'admin') {
         await loginAsAdmin(form.email, form.password)
         navigate('/admin', { replace: true })
+      } else if (tab === 'owner') {
+        await loginAsOwner(form.email, form.password)
+        navigate('/owner', { replace: true })
       } else {
         await login(form.email, form.password)
         navigate(from, { replace: true })
       }
     } catch (err) {
-      setError(err.message === 'NOT_ADMIN'
-        ? 'Access denied. This account does not have admin privileges.'
-        : friendlyError(err.code))
+      setError(
+        err.message === 'NOT_ADMIN'  ? 'Access denied. This account does not have admin privileges.'  :
+        err.message === 'NOT_OWNER'  ? 'Access denied. This account does not have owner privileges.'  :
+        friendlyError(err.code)
+      )
     } finally {
       setLoading(false)
     }
@@ -90,6 +95,8 @@ export default function Login() {
           width: 500, height: 500, borderRadius: '50%',
           background: tab === 'admin'
             ? 'radial-gradient(circle, rgba(193,18,31,0.1) 0%, transparent 70%)'
+            : tab === 'owner'
+            ? 'radial-gradient(circle, rgba(234,179,8,0.08) 0%, transparent 70%)'
             : 'radial-gradient(circle, rgba(193,18,31,0.06) 0%, transparent 70%)',
           transition: 'background 0.4s ease',
         }} />
@@ -114,9 +121,12 @@ export default function Login() {
               className={`flex-1 py-2.5 text-[11px] font-semibold tracking-wider2 uppercase rounded-[4px]
                           transition-all duration-200 cursor-pointer
                           ${tab === t.key
-                            ? 'bg-red text-white'
+                            ? t.key === 'owner'
+                              ? 'bg-yellow-500 text-black'
+                              : 'bg-red text-white'
                             : 'text-muted hover:text-white'}`}>
               {t.key === 'admin' && <span className="mr-1">🔒</span>}
+              {t.key === 'owner' && <span className="mr-1">👑</span>}
               {t.label}
             </button>
           ))}
@@ -125,7 +135,9 @@ export default function Login() {
         {/* ── Card ── */}
         <div className="rounded-[8px] border overflow-hidden transition-all duration-300"
           style={{
-            borderColor: tab === 'admin' ? 'rgba(193,18,31,0.3)' : '#222',
+            borderColor: tab === 'admin' ? 'rgba(193,18,31,0.3)'
+                      : tab === 'owner' ? 'rgba(234,179,8,0.35)'
+                      : '#222',
             background: 'linear-gradient(160deg, #141414, #0f0f0f)',
           }}>
 
@@ -137,6 +149,19 @@ export default function Login() {
                 <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
               </svg>
               <span className="text-[12px] font-semibold text-red tracking-wide">Admin Login — Restricted Access</span>
+            </div>
+          )}
+
+          {/* Owner banner */}
+          {tab === 'owner' && (
+            <div className="flex items-center gap-2 px-6 py-3 border-b"
+              style={{ borderColor: 'rgba(234,179,8,0.2)', background: 'rgba(234,179,8,0.05)' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#eab308" strokeWidth="2">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+              </svg>
+              <span className="text-[12px] font-semibold tracking-wide" style={{ color: '#eab308' }}>
+                Owner Portal — Authorized Access Only
+              </span>
             </div>
           )}
 
@@ -196,7 +221,9 @@ export default function Login() {
                       <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       Signing in...
                     </span>
-                  : tab === 'admin' ? 'Sign In as Admin' : 'Sign In'
+                  : tab === 'admin' ? 'Sign In as Admin'
+                  : tab === 'owner' ? 'Sign In as Owner'
+                  : 'Sign In'
                 }
               </button>
             </form>
@@ -231,6 +258,13 @@ export default function Login() {
                 Admin access is by invitation only.<br/>Contact the site owner if you need access.
               </p>
             )}
+
+            {tab === 'owner' && (
+              <p className="text-[11px] text-center mt-4 leading-relaxed" style={{ color: '#9a7a00' }}>
+                Owner portal is exclusively for authorized business owners.<br/>
+                Unauthorized access attempts are logged.
+              </p>
+            )}
           </div>
 
           {/* Card footer */}
@@ -241,6 +275,10 @@ export default function Login() {
                 <Link to="/register" className="text-white hover:text-red transition-colors duration-150 font-medium">
                   Register now
                 </Link>
+              </p>
+            ) : tab === 'owner' ? (
+              <p className="text-[12px] text-muted text-center">
+                <span style={{ color: '#eab308' }}>👑 AURIX Owner Dashboard</span>
               </p>
             ) : (
               <p className="text-[12px] text-muted">

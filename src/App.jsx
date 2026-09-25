@@ -27,6 +27,19 @@ import AdminReports    from './admin/pages/AdminReports'
 import AdminManagement from './admin/pages/AdminManagement'
 import AdminProfile    from './admin/pages/AdminProfile'
 
+// Owner
+import OwnerLayout           from './owner/OwnerLayout'
+import OwnerOverview         from './owner/pages/OwnerOverview'
+import OwnerOrders           from './owner/pages/OwnerOrders'
+import OwnerAdminManagement  from './owner/pages/OwnerAdminManagement'
+import OwnerAdminPerformance from './owner/pages/OwnerAdminPerformance'
+import OwnerInventory        from './owner/pages/OwnerInventory'
+import OwnerCustomers        from './owner/pages/OwnerCustomers'
+import OwnerCoupons          from './owner/pages/OwnerCoupons'
+import OwnerFinance          from './owner/pages/OwnerFinance'
+import OwnerReports          from './owner/pages/OwnerReports'
+import OwnerProfile          from './owner/pages/OwnerProfile'
+
 export default function App() {
   return (
     <>
@@ -78,6 +91,19 @@ export default function App() {
           <Route path="reports"       element={<AdminReports />} />
           <Route path="admins"        element={<AdminManagement />} />
           <Route path="profile"       element={<AdminProfile />} />
+        </Route>
+        {/* ── Owner routes ── */}
+        <Route path="/owner" element={<OwnerLayout />}>
+          <Route index                    element={<OwnerOverview />} />
+          <Route path="orders"            element={<OwnerOrders />} />
+          <Route path="admin-management"  element={<OwnerAdminManagement />} />
+          <Route path="admin-performance" element={<OwnerAdminPerformance />} />
+          <Route path="inventory"         element={<OwnerInventory />} />
+          <Route path="customers"         element={<OwnerCustomers />} />
+          <Route path="coupons"           element={<OwnerCoupons />} />
+          <Route path="finance"           element={<OwnerFinance />} />
+          <Route path="reports"           element={<OwnerReports />} />
+          <Route path="profile"           element={<OwnerProfile />} />
         </Route>
       </Routes>
     </>
