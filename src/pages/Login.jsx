@@ -15,12 +15,13 @@ function GoogleIcon() {
 }
 
 const TABS = [
-  { key: 'user',  label: 'User' },
+  { key: 'user',  label: 'User'  },
   { key: 'admin', label: 'Admin' },
+  { key: 'owner', label: 'Owner' },
 ]
 
 export default function Login() {
-  const { login, loginWithGoogle, loginAsAdmin } = useAuth()
+  const { login, loginWithGoogle, loginAsAdmin, loginAsOwner } = useAuth()
   const navigate  = useNavigate()
   const location  = useLocation()
   const from      = location.state?.from || '/shop'

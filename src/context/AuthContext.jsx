@@ -112,6 +112,18 @@ export function AuthProvider({ children }) {
     return cred.user
   }
 
+  /* ── owner login — checks role after login ── */
+  const loginAsOwner = async (email, password) => {
+    const cred = await signInWithEmailAndPassword(auth, email, password)
+    const snap = await getDoc(doc(db, 'users', cred.user.uid))
+    if (!snap.exists() || snap.data().role !== 'owner') {
+      await signOut(auth)
+      throw new Error('NOT_OWNER')
+    }
+    setProfile(snap.data())
+    return cred.user
+  }
+
   /* ── logout ── */
   const logout = async () => {
     if (user?.uid) stopPresence(user.uid)
@@ -133,12 +145,13 @@ export function AuthProvider({ children }) {
   }
 
   const isAdmin = profile?.role === 'admin'
+  const isOwner = profile?.role === 'owner'
 
   return (
     <AuthContext.Provider value={{
       user, profile, loading,
-      isAdmin,
-      register, login, loginWithGoogle, loginAsAdmin, logout, updateUserProfile,
+      isAdmin, isOwner,
+      register, login, loginWithGoogle, loginAsAdmin, loginAsOwner, logout, updateUserProfile,
     }}>
       {children}
     </AuthContext.Provider>
