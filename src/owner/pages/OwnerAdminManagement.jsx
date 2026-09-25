@@ -17,7 +17,7 @@ export default function OwnerAdminManagement() {
   const [loading,  setLoading]  = useState(true)
 
   useEffect(() => onSnapshot(collection(db,'admins'),   s => { setAdmins(s.docs.map(d=>({id:d.id,...d.data()}))); setLoading(false) }), [])
-  useEffect(() => onSnapshot(collection(db,'users'),    s => setUsers(s.docs.map(d=>({id:d.id,...d.data()})))), [])
+  useEffect(() => onSnapshot(collection(db,'users'),    s => { setUsers(s.docs.map(d=>({id:d.id,...d.data()}))); setLoading(false) }), [])
   useEffect(() => onSnapshot(collection(db,'presence'), s => { const m={}; s.docs.forEach(d=>m[d.id]=d.data()); setPresence(m) }), [])
   useEffect(() => onSnapshot(collection(db,'orders'),   s => setOrders(s.docs.map(d=>({id:d.id,...d.data()})))), [])
 
@@ -27,14 +27,21 @@ export default function OwnerAdminManagement() {
     return (Date.now()-last.getTime()) < 2*60*1000
   }
 
-  // Merge admins with users data
-  const adminList = admins.map(a => ({
-    ...a,
-    userDoc: users.find(u => u.id === a.id) || {},
-    ordersHandled: orders.filter(o => o.handledBy?.uid === a.id).length,
-    online: isOnline(a.id),
-    lastSeen: presence[a.id]?.lastSeen,
-  }))
+  // Admin list = users with role==='admin' (source of truth)
+  // Merge with admins collection for profile details only
+  const adminList = users
+    .filter(u => u.role === 'admin')
+    .map(u => {
+      const adminProfile = admins.find(a => a.id === u.id) || {}
+      return {
+        ...adminProfile,
+        ...u,
+        id: u.id,
+        ordersHandled: orders.filter(o => o.handledBy?.uid === u.id).length,
+        online: isOnline(u.id),
+        lastSeen: presence[u.id]?.lastSeen,
+      }
+    })
 
   const filtered = adminList.filter(a => {
     const s = search.toLowerCase()
@@ -57,7 +64,7 @@ export default function OwnerAdminManagement() {
 
   // Demote admin → customer
   const demoteAdmin = async (a) => {
-    if (a.userDoc?.role === 'owner') { toast.error('Cannot demote the Owner'); return }
+    if (a.role === 'owner') { toast.error('Cannot demote the Owner'); return }
     try {
       await updateDoc(doc(db,'users',a.id), { role:'customer', demotedBy:user?.uid, demotedAt:serverTimestamp() })
       toast.success(`${a.name||a.email} demoted to Customer`)
@@ -65,10 +72,8 @@ export default function OwnerAdminManagement() {
     } catch { toast.error('Failed to demote admin') }
   }
 
-  // Admins from users collection (those with role==='admin')
-  const adminUsers = users.filter(u => u.role==='admin')
-  // Users who are NOT admin/owner
-  const regularUsers = users.filter(u => u.role==='customer')
+  // Users who are NOT admin/owner — eligible for promotion
+  const regularUsers = users.filter(u => u.role === 'customer')
 
   const fmtDate = ts => ts?.toDate ? ts.toDate().toLocaleDateString('en-BD',{day:'2-digit',month:'short',year:'numeric',timeZone:'Asia/Dhaka'}) : '—'
   const fmtTime = ts => ts?.toDate ? ts.toDate().toLocaleString('en-BD',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Asia/Dhaka'}) : '—'
@@ -80,7 +85,7 @@ export default function OwnerAdminManagement() {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="font-display font-extrabold text-[22px] tracking-[-0.03em] text-white">Admin Management</h1>
-          <p className="text-[12px] text-muted mt-0.5">{adminUsers.length} admins · {adminList.filter(a=>a.online).length} online now</p>
+          <p className="text-[12px] text-muted mt-0.5">{adminList.length} admins · {adminList.filter(a=>a.online).length} online now</p>
         </div>
       </div>
 
@@ -154,7 +159,7 @@ export default function OwnerAdminManagement() {
                         className="px-2.5 py-1 bg-[#141414] border border-[#222] rounded-[4px] text-[10px] text-muted hover:text-white hover:border-[#333] transition-all">
                         View
                       </button>
-                      {a.userDoc?.role !== 'owner' && (
+                      {a.role !== 'owner' && (
                         <button onClick={()=>setConfirm({type:'demote',target:a})}
                           className="px-2.5 py-1 bg-red/5 border border-red/20 rounded-[4px] text-[10px] text-red hover:bg-red/10 transition-all">
                           Demote
@@ -243,7 +248,7 @@ export default function OwnerAdminManagement() {
                   <span className="text-off font-medium text-right">{v}</span>
                 </div>
               ))}
-              {selected.userDoc?.role !== 'owner' && (
+              {selected.role !== 'owner' && (
                 <button onClick={()=>setConfirm({type:'demote',target:selected})}
                   className="w-full py-2.5 rounded-[6px] bg-red/10 border border-red/20 text-[12px] font-semibold text-red hover:bg-red/20 transition-all mt-2">
                   Demote to Customer

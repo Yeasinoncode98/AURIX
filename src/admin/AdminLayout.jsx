@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { collection, onSnapshot } from 'firebase/firestore'
+import { collection, onSnapshot, doc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import AdminNotificationBell from './components/AdminNotificationBell'
@@ -52,6 +52,19 @@ export default function AdminLayout() {
     if (loading) return          // still loading — do nothing
     if (!user || !isAdmin) navigate('/login', { replace: true })
   }, [user, isAdmin, loading, navigate])
+
+  // Real-time role watcher — if role changes to non-admin, force logout
+  useEffect(() => {
+    if (!user) return
+    const unsub = onSnapshot(doc(db, 'users', user.uid), snap => {
+      if (!snap.exists()) return
+      const role = snap.data().role
+      if (role !== 'admin') {
+        logout().then(() => navigate('/login', { replace: true }))
+      }
+    })
+    return unsub
+  }, [user])
 
   // Show spinner while Firebase restores session
   if (loading) return (

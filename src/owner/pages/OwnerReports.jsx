@@ -52,6 +52,21 @@ export default function OwnerReports() {
         {mode==='range'&&<><input type="date" value={from} onChange={e=>setFrom(e.target.value)} className="bg-[#0e0e0e] border border-[#1a1a1a] rounded-[6px] px-3 py-2 text-[12px] text-white outline-none [color-scheme:dark]"/><span className="text-muted">to</span><input type="date" value={to} onChange={e=>setTo(e.target.value)} className="bg-[#0e0e0e] border border-[#1a1a1a] rounded-[6px] px-3 py-2 text-[12px] text-white outline-none [color-scheme:dark]"/></>}
       </div>
 
+      {/* CEO Signature toggle */}
+      <div className="flex items-center gap-4 px-5 py-4 rounded-[8px] border border-[#1a1a1a]" style={{background:'#0e0e0e'}}>
+        <div className="flex items-center gap-3">
+          <button type="button" onClick={()=>setCeoSigned(s=>!s)}
+            className={`relative w-11 h-6 rounded-full transition-all duration-300 ${ceoSigned?'bg-green-500':'bg-[#222]'}`}>
+            <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-all duration-300 ${ceoSigned?'left-[22px]':'left-0.5'}`}/>
+          </button>
+          <span className="text-[12px] text-off font-medium">Include CEO Signature</span>
+        </div>
+        {ceoSigned && (
+          <input value={ceoName} onChange={e=>setCeoName(e.target.value)} placeholder="CEO Full Name"
+            className="flex-1 bg-[#111] border border-[#1a1a1a] rounded-[4px] px-3 py-2 text-[13px] text-white placeholder-muted outline-none focus:border-[#333]"/>
+        )}
+      </div>
+
       {/* Print content */}
       <div className="rounded-[8px] border border-[#1a1a1a] overflow-hidden">
         <div ref={printRef} style={{background:'#fff',color:'#111',fontFamily:'serif',padding:'32px 40px'}}>
@@ -82,7 +97,23 @@ export default function OwnerReports() {
               <tr style={{background:'#f9f9f9'}}><td colSpan={4} style={{padding:'6px 8px',fontWeight:700,fontSize:10,textTransform:'uppercase',letterSpacing:1}}>TOTALS</td><td style={{padding:'6px 8px',fontWeight:900,fontSize:13}}>৳{revenue.toLocaleString()}</td><td/></tr>
             </tbody>
           </table>
-          <div style={{marginTop:32,paddingTop:16,borderTop:'1px solid #eee',textAlign:'center',fontSize:10,color:'#bbb'}}>AURIX Owner Report · Confidential</div>
+          <div style={{marginTop:32,paddingTop:16,borderTop:'1px solid #eee',display:'flex',justifyContent:'space-between',alignItems:'flex-end'}}>
+            <div style={{textAlign:'center',minWidth:160}}>
+              <div style={{borderTop:'1px solid #333',marginTop:40,paddingTop:6,fontSize:11,color:'#555'}}>Prepared By</div>
+              <div style={{fontSize:10,color:'#999',marginTop:2}}>AURIX Owner</div>
+            </div>
+            {ceoSigned && (
+              <div style={{textAlign:'center',minWidth:180}}>
+                <div style={{borderTop:'1px solid #C1121F',marginTop:40,paddingTop:6,fontSize:11,color:'#555'}}>{ceoName||'CEO, AURIX'}</div>
+                <div style={{fontSize:10,color:'#999',marginTop:2}}>Chief Executive Officer</div>
+              </div>
+            )}
+            <div style={{textAlign:'center',minWidth:160}}>
+              <div style={{borderTop:'1px solid #333',marginTop:40,paddingTop:6,fontSize:11,color:'#555'}}>Verified Date</div>
+              <div style={{fontSize:10,color:'#999',marginTop:2}}>{new Date().toLocaleDateString('en-BD',{day:'2-digit',month:'long',year:'numeric'})}</div>
+            </div>
+          </div>
+          <div style={{marginTop:24,textAlign:'center',fontSize:10,color:'#bbb'}}>AURIX Owner Report · Confidential</div>
         </div>
       </div>
     </div>
