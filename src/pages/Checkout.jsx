@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { collection, doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useCart } from '../context/CartContext'
+import { sanitizeText, checkRateLimit, recordAttempt } from '../utils/security'
 import { useAuth } from '../context/AuthContext'
 
 const DELIVERY = {
@@ -118,7 +119,16 @@ export default function Checkout() {
     e.preventDefault()
     const errs = validate()
     if (Object.keys(errs).length) { setErrors(errs); return }
+
+    // Rate limit: 3 orders per 60s — prevent order spam
+    const rl = checkRateLimit('checkout', 3, 60000)
+    if (rl.limited) {
+      setErrors({ submit: `Too many attempts. Please wait ${rl.resetIn} seconds.` })
+      return
+    }
+
     setPlacing(true)
+    recordAttempt('checkout')
 
     try {
       // Generate unique order ID
@@ -130,10 +140,10 @@ export default function Checkout() {
         status: 'pending',           // pending → confirmed → shipped → delivered
         createdAt: serverTimestamp(),
 
-        // Customer info
-        customerName:  form.name,
-        customerPhone: form.phone,
-        deliveryAddress: form.address,
+        // Customer info — sanitized before saving
+        customerName:  sanitizeText(form.name, 100),
+        customerPhone: sanitizeText(form.phone, 15),
+        deliveryAddress: sanitizeText(form.address, 300),
         userId: currentUser?.uid || null,
         userEmail: currentUser?.email || null,
 

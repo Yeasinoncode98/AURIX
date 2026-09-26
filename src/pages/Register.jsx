@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { sanitize, checkRateLimit, recordAttempt, validate as v } from '../utils/security'
 
 export default function Register() {
   const { register } = useAuth()
@@ -15,11 +16,13 @@ export default function Register() {
 
   const validate = () => {
     const e = {}
-    if (!form.name.trim())                e.name     = 'Name is required'
-    if (!/\S+@\S+\.\S+/.test(form.email)) e.email    = 'Enter a valid email'
-    if (form.phone && !/^01[3-9]\d{8}$/.test(form.phone)) e.phone = 'Enter a valid BD phone number'
-    if (form.password.length < 6)         e.password = 'Password must be at least 6 characters'
-    if (form.password !== form.confirm)   e.confirm  = 'Passwords do not match'
+    if (!v.name(form.name))                e.name     = 'Name must be 2–100 characters'
+    if (!v.email(form.email))              e.email    = 'Enter a valid email address'
+    if (form.phone && !v.phone(form.phone))e.phone    = 'Enter a valid BD phone number'
+    if (!v.password(form.password))        e.password = 'Password must be at least 6 characters'
+    if (form.password !== form.confirm)    e.confirm  = 'Passwords do not match'
+    // Extra: name must not contain HTML/scripts
+    if (/<[^>]*>/.test(form.name))         e.name     = 'Invalid characters in name'
     return e
   }
 
@@ -27,15 +30,26 @@ export default function Register() {
     e.preventDefault()
     const errs = validate()
     if (Object.keys(errs).length) { setErrors(errs); return }
+
+    // Rate limit: 3 register attempts per 60s (prevent account spam)
+    const rl = checkRateLimit('register', 3, 60000)
+    if (rl.limited) {
+      setErrors({ general: `Too many attempts. Wait ${rl.resetIn} seconds.` })
+      return
+    }
+
     setLoading(true)
+    recordAttempt('register')
     try {
-      await register(form.name.trim(), form.email, form.password, form.phone.trim())
+      // Sanitize all text fields before saving
+      const cleanName  = sanitize(form.name, 100)
+      const cleanEmail = sanitize(form.email, 200).toLowerCase()
+      const cleanPhone = sanitize(form.phone, 15)
+      await register(cleanName, cleanEmail, form.password, cleanPhone)
       navigate('/shop', { replace: true })
     } catch (err) {
-      // show the actual firebase error code for easier debugging
       const code = err.code || err.message || 'unknown'
       setErrors({ general: friendlyError(code) })
-      console.error('Register error:', code, err)
     } finally {
       setLoading(false)
     }

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { checkRateLimit, recordAttempt, resetAttempts, sanitize } from '../utils/security'
 
 /* ── Google SVG icon ── */
 function GoogleIcon() {
@@ -39,16 +40,33 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.email || !form.password) { setError('Please fill in all fields'); return }
+
+    // Rate limit: 5 attempts per 30 seconds per tab
+    const rlKey = `login_${tab}`
+    const rl = checkRateLimit(rlKey, 5, 30000)
+    if (rl.limited) {
+      setError(`Too many attempts. Please wait ${rl.resetIn} seconds before trying again.`)
+      return
+    }
+
+    // Sanitize inputs before use
+    const email    = sanitize(form.email, 200)
+    const password = form.password // never sanitize passwords
+
     setLoading(true)
+    recordAttempt(rlKey)
     try {
       if (tab === 'admin') {
-        await loginAsAdmin(form.email, form.password)
+        await loginAsAdmin(email, password)
+        resetAttempts(rlKey)
         navigate('/admin', { replace: true })
       } else if (tab === 'owner') {
-        await loginAsOwner(form.email, form.password)
+        await loginAsOwner(email, password)
+        resetAttempts(rlKey)
         navigate('/owner', { replace: true })
       } else {
-        await login(form.email, form.password)
+        await login(email, password)
+        resetAttempts(rlKey)
         navigate(from, { replace: true })
       }
     } catch (err) {
