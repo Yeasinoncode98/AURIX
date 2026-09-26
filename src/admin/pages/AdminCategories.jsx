@@ -249,7 +249,6 @@ function CategoryFormModal({ category, onClose }) {
       toast.success(isEdit ? 'Category updated successfully' : 'Category added successfully')
       onClose()
     } catch (err) {
-      console.error(err)
       toast.error('Failed to save category')
     } finally {
       setSaving(false)

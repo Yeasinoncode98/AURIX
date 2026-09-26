@@ -195,7 +195,6 @@ export default function Checkout() {
         },
       })
     } catch (err) {
-      console.error('Order save failed:', err)
       setPlacing(false)
       setErrors({ submit: 'Failed to place order. Please try again.' })
     }

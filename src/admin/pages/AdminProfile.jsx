@@ -86,7 +86,6 @@ export default function AdminProfile() {
       }, { merge: true })
       toast.success('Profile updated successfully')
     } catch (err) {
-      console.error(err)
       toast.error('Failed to save profile')
     } finally {
       setSaving(false)

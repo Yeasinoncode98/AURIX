@@ -397,7 +397,6 @@ function ProductFormModal({ product, categories, existingCount, onClose }) {
       toast.success(isEdit ? 'Product updated successfully' : 'Product added successfully')
       onClose()
     } catch (err) {
-      console.error('Save error:', err)
       toast.error(`Failed to save: ${err.message}`)
     } finally {
       setSaving(false)

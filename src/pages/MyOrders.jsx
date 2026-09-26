@@ -82,7 +82,6 @@ export default function MyOrders() {
         setFetching(false);
       },
       (err) => {
-        console.error("MyOrders error:", err);
         setFetching(false);
       },
     );
