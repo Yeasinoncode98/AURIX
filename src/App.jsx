@@ -1,4 +1,5 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
 import { Toaster } from 'react-hot-toast'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
@@ -40,9 +41,17 @@ import OwnerFinance          from './owner/pages/OwnerFinance'
 import OwnerReports          from './owner/pages/OwnerReports'
 import OwnerProfile          from './owner/pages/OwnerProfile'
 
+/* Scrolls to top on every route change */
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => { window.scrollTo(0, 0) }, [pathname])
+  return null
+}
+
 export default function App() {
   return (
     <>
+      <ScrollToTop />
       {/* Global toast notifications */}
       <Toaster
         position="top-right"
