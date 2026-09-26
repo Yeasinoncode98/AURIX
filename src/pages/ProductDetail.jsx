@@ -13,6 +13,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../context/AuthContext";
+import { sanitizeText, checkRateLimit, recordAttempt } from "../utils/security";
 // import { db } from "../firebase";
 import { useCart } from "../context/CartContext";
 import CartDrawer from "../components/CartDrawer";
@@ -188,11 +189,11 @@ export default function ProductDetail() {
 
   // Live review count
   useEffect(() => {
-    if (!slug) return
-    return onSnapshot(collection(db, 'products', slug, 'reviews'), snap => {
-      setReviewCount(snap.size)
-    })
-  }, [slug])
+    if (!slug) return;
+    return onSnapshot(collection(db, "products", slug, "reviews"), (snap) => {
+      setReviewCount(snap.size);
+    });
+  }, [slug]);
 
   useEffect(() => {
     setLoading(true);
@@ -896,12 +897,31 @@ function ReviewSection({ slug }) {
       setError("Please write your review");
       return;
     }
+
+    // Rate limit: 2 reviews per 60s per user — prevent spam
+    const rlKey = `review_${user.uid}`;
+    const rl = checkRateLimit(rlKey, 2, 60000);
+    if (rl.limited) {
+      setError(
+        `Please wait ${rl.resetIn} seconds before submitting another review.`,
+      );
+      return;
+    }
+
+    // Sanitize comment
+    const cleanComment = sanitizeText(comment, 1000);
+    if (cleanComment.length < 3) {
+      setError("Review is too short");
+      return;
+    }
+
     setSubmitting(true);
     setError("");
+    recordAttempt(rlKey);
     try {
       await addDoc(collection(db, "products", slug, "reviews"), {
         rating,
-        comment: comment.trim(),
+        comment: cleanComment,
         userName:
           profile?.name ||
           user.displayName ||
@@ -915,7 +935,7 @@ function ReviewSection({ slug }) {
       // Mirror to top-level reviews collection — for admin bell notifications (no index needed)
       await addDoc(collection(db, "reviews"), {
         rating,
-        comment: comment.trim(),
+        comment: cleanComment,
         userName:
           profile?.name ||
           user.displayName ||
