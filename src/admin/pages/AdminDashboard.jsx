@@ -174,6 +174,12 @@ export default function AdminDashboard() {
       color: "#C1121F",
     },
     {
+      label: "Product Revenue",
+      value: `৳${(totalRevenue - orders.filter(o=>o.status==='delivered').reduce((s,o)=>s+(o.deliveryFee||0),0)).toLocaleString()}`,
+      icon: "📦",
+      color: "#8b5cf6",
+    },
+    {
       label: "Pending",
       value: pending,
       icon: "⏳",
