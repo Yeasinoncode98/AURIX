@@ -159,8 +159,8 @@ export default function Checkout() {
       return;
     }
 
-    // Rate limit: 3 orders per 60s — prevent order spam
-    const rl = checkRateLimit("checkout", 3, 60000);
+    // Rate limit: 5 orders per 2 minutes — prevent order spam
+    const rl = checkRateLimit("checkout", 5, 120000);
     if (rl.limited) {
       setErrors({
         submit: `Too many attempts. Please wait ${rl.resetIn} seconds.`,

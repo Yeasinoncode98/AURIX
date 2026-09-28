@@ -1,7 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import {
-  collection, query, orderBy, onSnapshot,
-  doc, updateDoc, setDoc, getDoc, serverTimestamp,
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+  doc,
+  updateDoc,
+  setDoc,
+  getDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../../firebase";
 import { useAuth } from "../../context/AuthContext";
@@ -480,9 +487,7 @@ function OrderDrawer({ order, onClose, onStatusChange, onMemo }) {
           )}
 
           {/* IP Tracking */}
-          {order.clientIP && (
-            <IPSection order={order} />
-          )}
+          {order.clientIP && <IPSection order={order} />}
 
           {/* Cash memo button */}
           <button
@@ -665,6 +670,12 @@ function MemoContent({ order, orderDate, copy }) {
   const deliveryFee = Number(order.deliveryFee ?? 0);
   const totalAmount = Number(order.totalAmount ?? 0);
   const subtotal = Number(order.subtotal ?? totalAmount - deliveryFee);
+  const discount = Number(order.discount ?? 0);
+  const discountedAmount = Number(
+    order.discountedAmount ?? subtotal - discount,
+  );
+  // What customer pays at door = discounted product amount (delivery already paid)
+  const codAmount = discount > 0 ? discountedAmount : subtotal;
 
   // All inline styles use deep black/dark for print clarity on white paper
   const S = {
@@ -859,9 +870,32 @@ function MemoContent({ order, orderDate, copy }) {
 
       {/* Financials */}
       <div style={S.row}>
-        <span style={S.lbl}>Product Total</span>
+        <span style={S.lbl}>Product Subtotal</span>
         <span style={S.val}>৳{subtotal?.toLocaleString()}</span>
       </div>
+
+      {/* Coupon discount — only if applied */}
+      {discount > 0 && (
+        <>
+          <div style={S.row}>
+            <span style={{ ...S.lbl, color: "#166534" }}>
+              Coupon ({order.couponCode})
+            </span>
+            <span style={{ ...S.valGreen }}>
+              − ৳{discount?.toLocaleString()}
+            </span>
+          </div>
+          <div style={S.row}>
+            <span style={{ ...S.lbl, fontWeight: 700 }}>
+              Discounted Product Total
+            </span>
+            <span style={{ ...S.val, fontWeight: 800 }}>
+              ৳{discountedAmount?.toLocaleString()}
+            </span>
+          </div>
+        </>
+      )}
+
       <div style={S.row}>
         <span style={{ ...S.lbl, color: "#166534" }}>
           Delivery Fee (Pre-Paid ✓)
@@ -869,15 +903,17 @@ function MemoContent({ order, orderDate, copy }) {
         <span style={S.valGreen}>৳{deliveryFee?.toLocaleString()}</span>
       </div>
 
-      {/* COD box — big prominent */}
+      {/* COD box — what customer pays at door */}
       <div style={S.codBox}>
         <div>
           <div style={S.codLbl}>Customer Pays at Door</div>
           <div style={S.codSub}>
-            Delivery ৳{deliveryFee} already paid via {order.paymentLabel}
+            {discount > 0
+              ? `After ৳${discount} coupon discount · Delivery ৳${deliveryFee} already paid via ${order.paymentLabel}`
+              : `Delivery ৳${deliveryFee} already paid via ${order.paymentLabel}`}
           </div>
         </div>
-        <div style={S.codAmt}>৳{subtotal?.toLocaleString()}</div>
+        <div style={S.codAmt}>৳{codAmount?.toLocaleString()}</div>
       </div>
 
       <div style={{ ...S.row, marginTop: 8 }}>
@@ -947,6 +983,157 @@ function DrawerRow({ label, value, mono, highlight }) {
       >
         {value}
       </span>
+    </div>
+  );
+}
+
+/* ── IP Tracking Section ── */
+function IPSection({ order }) {
+  const [blocked, setBlocked] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(true);
+  const ipKey = order.clientIP?.replace(/\./g, "_");
+
+  useEffect(() => {
+    if (!ipKey) return;
+    getDoc(doc(db, "blockedIPs", ipKey))
+      .then((snap) => {
+        setBlocked(snap.exists() && snap.data().active);
+        setChecking(false);
+      })
+      .catch(() => setChecking(false));
+  }, [ipKey]);
+
+  const handleBlock = async () => {
+    if (!ipKey) return;
+    setLoading(true);
+    try {
+      await setDoc(
+        doc(db, "blockedIPs", ipKey),
+        {
+          ip: order.clientIP,
+          active: !blocked,
+          blockedAt: serverTimestamp(),
+          reason: "Blocked by admin from order: " + (order.orderId || order.id),
+          orderId: order.orderId || order.id,
+          customer: order.customerName || "",
+        },
+        { merge: true },
+      );
+      setBlocked((b) => !b);
+      toast.success(blocked ? "IP unblocked" : "IP blocked successfully");
+    } catch {
+      toast.error("Failed to update IP block");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const mapsUrl =
+    order.clientLat && order.clientLon
+      ? `https://www.google.com/maps?q=${order.clientLat},${order.clientLon}`
+      : null;
+
+  return (
+    <div className="rounded-[8px] border border-[#1a1a1a] overflow-hidden">
+      <div className="px-4 py-2.5 border-b border-[#1a1a1a] bg-[#0d0d0d] flex items-center justify-between">
+        <p className="text-[10px] uppercase tracking-wider2 text-muted font-semibold">
+          IP & Location Tracking
+        </p>
+        {!checking && (
+          <span
+            className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full border
+            ${
+              blocked
+                ? "text-red bg-red/10 border-red/20"
+                : "text-green-400 bg-green-500/10 border-green-500/20"
+            }`}
+          >
+            {blocked ? "Blocked" : "Active"}
+          </span>
+        )}
+      </div>
+      <div className="px-4 py-3 space-y-2">
+        <div className="flex items-start justify-between gap-4">
+          <span className="text-[11px] text-muted flex-shrink-0">
+            IP Address
+          </span>
+          <span className="font-mono font-bold text-[12px] text-white">
+            {order.clientIP}
+          </span>
+        </div>
+        {order.clientCity && (
+          <div className="flex items-start justify-between gap-4">
+            <span className="text-[11px] text-muted flex-shrink-0">
+              City / Region
+            </span>
+            <span className="text-[12px] text-off text-right">
+              {[order.clientCity, order.clientRegion]
+                .filter(Boolean)
+                .join(", ")}
+            </span>
+          </div>
+        )}
+        {order.clientCountry && (
+          <div className="flex items-start justify-between gap-4">
+            <span className="text-[11px] text-muted flex-shrink-0">
+              Country
+            </span>
+            <span className="text-[12px] text-off">{order.clientCountry}</span>
+          </div>
+        )}
+        {order.clientISP && (
+          <div className="flex items-start justify-between gap-4">
+            <span className="text-[11px] text-muted flex-shrink-0">ISP</span>
+            <span className="text-[12px] text-off text-right truncate max-w-[180px]">
+              {order.clientISP}
+            </span>
+          </div>
+        )}
+        {mapsUrl && (
+          <a
+            href={mapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-[11px] text-blue-400 hover:text-blue-300 transition-colors mt-1"
+          >
+            <svg
+              width="11"
+              height="11"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+              <circle cx="12" cy="10" r="3" />
+            </svg>
+            View on Map
+          </a>
+        )}
+
+        {/* Block / Unblock button */}
+        <button
+          onClick={handleBlock}
+          disabled={loading || checking}
+          className={`w-full mt-2 py-2 rounded-[6px] text-[11px] font-semibold border transition-all
+            ${
+              blocked
+                ? "bg-green-500/10 border-green-500/20 text-green-400 hover:bg-green-500/20"
+                : "bg-red/10 border-red/20 text-red hover:bg-red/20"
+            }
+            disabled:opacity-50`}
+        >
+          {loading
+            ? "Updating..."
+            : blocked
+              ? "✓ Unblock this IP"
+              : "🚫 Block this IP"}
+        </button>
+        <p className="text-[10px] text-muted leading-relaxed">
+          Blocking prevents future orders from this IP address.
+        </p>
+      </div>
     </div>
   );
 }

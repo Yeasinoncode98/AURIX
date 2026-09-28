@@ -365,6 +365,30 @@ function CRMDrawer({ user, orders, online, onClose }) {
             </div>
           </div>
 
+          {/* IP Addresses from orders */}
+          {orders.length > 0 && (() => {
+            const ips = [...new Set(orders.filter(o=>o.clientIP&&o.clientIP!=='unknown').map(o=>o.clientIP))]
+            if (!ips.length) return null
+            return (
+              <div className="rounded-[8px] border border-[#1a1a1a] overflow-hidden">
+                <div className="px-4 py-3 border-b border-[#1a1a1a] bg-[#0d0d0d]">
+                  <p className="text-[10px] uppercase tracking-wider2 text-muted font-semibold">Known IP Addresses</p>
+                </div>
+                <div className="px-4 py-3 space-y-1.5">
+                  {ips.map(ip => {
+                    const o = orders.find(ord=>ord.clientIP===ip)
+                    return (
+                      <div key={ip} className="flex items-center justify-between">
+                        <span className="font-mono text-[12px] text-white">{ip}</span>
+                        <span className="text-[10px] text-muted">{[o?.clientCity, o?.clientCountry].filter(Boolean).join(', ')}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })()}
+
           {/* Order history */}
           <div className="rounded-[8px] border border-[#1a1a1a] overflow-hidden">
             <div className="px-4 py-3 border-b border-[#1a1a1a] bg-[#0d0d0d]">
