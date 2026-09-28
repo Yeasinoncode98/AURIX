@@ -20,6 +20,7 @@ import AdminOrders     from './admin/pages/AdminOrders'
 import AdminProducts   from './admin/pages/AdminProducts'
 import AdminCategories from './admin/pages/AdminCategories'
 import AdminReviews    from './admin/pages/AdminReviews'
+import AdminRefunds    from './admin/pages/AdminRefunds'
 import AdminUsers      from './admin/pages/AdminUsers'
 import AdminCoupons    from './admin/pages/AdminCoupons'
 import AdminBillings   from './admin/pages/AdminBillings'
@@ -93,6 +94,7 @@ export default function App() {
           <Route path="products"      element={<AdminProducts />} />
           <Route path="categories"    element={<AdminCategories />} />
           <Route path="reviews"       element={<AdminReviews />} />
+          <Route path="refunds"       element={<AdminRefunds />} />
           <Route path="users"         element={<AdminUsers />} />
           <Route path="coupons"       element={<AdminCoupons />} />
           <Route path="billings"      element={<AdminBillings />} />

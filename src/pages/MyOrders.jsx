@@ -1,8 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { collection, onSnapshot } from "firebase/firestore";
+import {
+  collection,
+  onSnapshot,
+  doc,
+  updateDoc,
+  setDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../context/AuthContext";
+import toast from "react-hot-toast";
 
 /* ── Status config ── */
 const STATUS_STEPS = [
@@ -172,11 +180,64 @@ export default function MyOrders() {
 
 /* ── Order Card ── */
 function OrderCard({ order, expanded, onToggle }) {
+  const { user } = useAuth();
   const info = STATUS_INFO[order.status] || STATUS_INFO.pending;
   const isCancelled = order.status === "cancelled";
+  const isDelivered = order.status === "delivered";
   const stepIndex = STATUS_STEPS.indexOf(order.status);
   const subtotal =
     order.subtotal ?? order.totalAmount - (order.deliveryFee ?? 0);
+  const codAmount = order.totalAmount - (order.deliveryFee ?? 0);
+
+  // Cancellable: only pending or confirmed
+  const canCancel = ["pending", "confirmed"].includes(order.status);
+  const [cancelling, setCancelling] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const handleCancel = async () => {
+    if (!user) return;
+    setCancelling(true);
+    try {
+      const orderId = order.orderId || order.id;
+      // 1. Update order status to cancelled
+      await updateDoc(doc(db, "orders", order.id), {
+        status: "cancelled",
+        cancelledAt: serverTimestamp(),
+        cancelledBy: "customer",
+        cancelledByUid: user.uid,
+      });
+      // 2. Create refund request (delivery fee was pre-paid)
+      const refundAmount = order.deliveryFee ?? 0;
+      await setDoc(doc(db, "refunds", orderId), {
+        orderId,
+        orderDocId: order.id,
+        customerId: user.uid,
+        customerName: order.customerName,
+        customerPhone: order.customerPhone,
+        senderNumber: order.senderNumber,
+        trxId: order.trxId,
+        paymentLabel: order.paymentLabel,
+        deliveryFee: refundAmount,
+        refundAmount,
+        totalAmount: order.totalAmount,
+        subtotal: order.subtotal,
+        items: order.items || [],
+        cancelledAt: serverTimestamp(),
+        status: "pending", // pending | refunded
+        refundedAt: null,
+        refundTrxId: null,
+        refundTo: null,
+        adminMessage: null,
+        refundedBy: null,
+      });
+      toast.success("Order cancelled. Refund request created.");
+      setShowConfirm(false);
+    } catch {
+      toast.error("Failed to cancel order.");
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   const orderDate = order.createdAt?.toDate
     ? order.createdAt.toDate().toLocaleDateString("en-BD", {
@@ -465,11 +526,156 @@ function OrderCard({ order, expanded, onToggle }) {
                             pt-3 border-t border-[#1a1a1a] mt-2"
             >
               <span>Pay at Door</span>
-              <span className="text-red">৳{subtotal?.toLocaleString()}</span>
+              <span className="text-red">৳{codAmount?.toLocaleString()}</span>
             </div>
           </div>
+
+          {/* ── Cancel Button ── */}
+          {canCancel && (
+            <div className="px-5 pb-4">
+              {!showConfirm ? (
+                <button
+                  onClick={() => setShowConfirm(true)}
+                  className="w-full py-2.5 rounded-[6px] border border-red/30 bg-red/5
+                             text-[12px] font-semibold text-red hover:bg-red/10 transition-all"
+                >
+                  Cancel Order
+                </button>
+              ) : (
+                <div className="rounded-[6px] border border-red/30 bg-red/5 p-4 space-y-3">
+                  <p className="text-[12px] text-white font-semibold">
+                    Cancel this order?
+                  </p>
+                  <p className="text-[11px] text-muted leading-relaxed">
+                    You paid ৳{order.deliveryFee} delivery fee in advance. A
+                    refund request will be created automatically.
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowConfirm(false)}
+                      className="flex-1 py-2 rounded-[6px] border border-[#222] text-[11px] text-muted hover:text-white transition-colors"
+                    >
+                      Keep Order
+                    </button>
+                    <button
+                      onClick={handleCancel}
+                      disabled={cancelling}
+                      className="flex-1 py-2 rounded-[6px] bg-red text-white text-[11px] font-semibold
+                                 hover:bg-red/90 transition-colors disabled:opacity-60"
+                    >
+                      {cancelling ? "Cancelling..." : "Yes, Cancel"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Refund Status (for cancelled orders) ── */}
+          {isCancelled && order.deliveryFee > 0 && (
+            <RefundStatus
+              orderId={order.orderId || order.id}
+              deliveryFee={order.deliveryFee}
+            />
+          )}
         </div>
       )}
+    </div>
+  );
+}
+
+/* ── Refund Status Component ── */
+function RefundStatus({ orderId, deliveryFee }) {
+  const [refund, setRefund] = useState(null);
+
+  useEffect(() => {
+    if (!orderId) return;
+    const unsub = onSnapshot(doc(db, "refunds", orderId), (snap) => {
+      if (snap.exists()) setRefund(snap.data());
+    });
+    return unsub;
+  }, [orderId]);
+
+  if (!refund)
+    return (
+      <div className="px-5 pb-4">
+        <div className="px-4 py-3 rounded-[6px] border border-yellow-500/20 bg-yellow-500/5">
+          <p className="text-[11px] font-semibold text-yellow-500">
+            ⏳ Refund Pending
+          </p>
+          <p className="text-[10px] text-muted mt-0.5">
+            ৳{deliveryFee} delivery fee refund request submitted. Admin will
+            process soon.
+          </p>
+        </div>
+      </div>
+    );
+
+  const fmtDate = (ts) =>
+    ts?.toDate
+      ? ts.toDate().toLocaleString("en-BD", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+          timeZone: "Asia/Dhaka",
+        })
+      : "—";
+
+  if (refund.status === "refunded")
+    return (
+      <div className="px-5 pb-4">
+        <div className="rounded-[6px] border border-green-500/20 bg-green-500/5 p-4 space-y-2">
+          <p className="text-[12px] font-bold text-green-400">
+            ✅ Refund Completed
+          </p>
+          <div className="space-y-1.5 text-[11px]">
+            <div className="flex justify-between">
+              <span className="text-muted">Amount Refunded</span>
+              <span className="font-bold text-white">
+                ৳{refund.refundAmount?.toLocaleString()}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted">Refunded To</span>
+              <span className="text-off">{refund.refundTo}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted">TRX ID</span>
+              <span className="font-mono text-white">{refund.refundTrxId}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted">Date</span>
+              <span className="text-off">{fmtDate(refund.refundedAt)}</span>
+            </div>
+            {refund.adminMessage && (
+              <div className="pt-2 border-t border-[#1a1a1a]">
+                <p className="text-[10px] text-muted mb-0.5">
+                  Message from AURIX
+                </p>
+                <p className="text-[12px] text-off italic">
+                  "{refund.adminMessage}"
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+
+  return (
+    <div className="px-5 pb-4">
+      <div className="px-4 py-3 rounded-[6px] border border-yellow-500/20 bg-yellow-500/5">
+        <p className="text-[11px] font-semibold text-yellow-500">
+          ⏳ Refund Pending
+        </p>
+        <p className="text-[10px] text-muted mt-0.5">
+          ৳{refund.refundAmount} refund request submitted. Admin will process
+          shortly.
+        </p>
+      </div>
     </div>
   );
 }
