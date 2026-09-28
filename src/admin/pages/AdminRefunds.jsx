@@ -72,6 +72,7 @@ export default function AdminRefunds() {
     setSelected(r);
     setForm({
       refundAmount: String(r.refundAmount || r.deliveryFee || ""),
+      refundFrom: "",
       refundTo: r.senderNumber || "",
       refundTrxId: "",
       adminMessage: "",
@@ -79,7 +80,12 @@ export default function AdminRefunds() {
   };
 
   const processRefund = async () => {
-    if (!form.refundAmount || !form.refundTo || !form.refundTrxId) {
+    if (
+      !form.refundAmount ||
+      !form.refundFrom ||
+      !form.refundTo ||
+      !form.refundTrxId
+    ) {
       toast.error("Fill all required fields");
       return;
     }
@@ -92,6 +98,7 @@ export default function AdminRefunds() {
       await updateDoc(doc(db, "refunds", selected.id), {
         status: "refunded",
         refundAmount: Number(form.refundAmount),
+        refundFrom: form.refundFrom,
         refundTo: form.refundTo,
         refundTrxId: form.refundTrxId,
         adminMessage: form.adminMessage,
@@ -364,6 +371,7 @@ export default function AdminRefunds() {
                   </p>
                   {[
                     ["Refunded Amount", "৳" + (selected.refundAmount || 0)],
+                    ["Refunded From", selected.refundFrom],
                     ["Refunded To", selected.refundTo],
                     ["TRX ID", selected.refundTrxId],
                     ["By", selected.refundedBy?.name],

@@ -639,6 +639,10 @@ function RefundStatus({ orderId, deliveryFee }) {
               </span>
             </div>
             <div className="flex justify-between">
+              <span className="text-muted">Refunded From</span>
+              <span className="text-off">{refund.refundFrom||'—'}</span>
+            </div>
+            <div className="flex justify-between">
               <span className="text-muted">Refunded To</span>
               <span className="text-off">{refund.refundTo}</span>
             </div>
