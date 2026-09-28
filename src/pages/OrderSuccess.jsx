@@ -252,8 +252,6 @@ export default function OrderSuccess() {
               <p className="font-display font-extrabold text-[28px] tracking-[-0.03em] text-white">
                 ৳
                 {(
-                  order.discountedAmount ??
-                  order.subtotal ??
                   order.totalAmount - (order.deliveryFee ?? 0)
                 )?.toLocaleString()}
               </p>

@@ -674,8 +674,8 @@ function MemoContent({ order, orderDate, copy }) {
   const discountedAmount = Number(
     order.discountedAmount ?? subtotal - discount,
   );
-  // What customer pays at door = discounted product amount (delivery already paid)
-  const codAmount = discount > 0 ? discountedAmount : subtotal;
+  // COD = totalAmount - deliveryFee (customer pays everything except pre-paid delivery fee)
+  const codAmount = totalAmount - deliveryFee;
 
   // All inline styles use deep black/dark for print clarity on white paper
   const S = {
