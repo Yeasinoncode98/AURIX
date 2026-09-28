@@ -1,12 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import {
-  collection,
-  query,
-  orderBy,
-  onSnapshot,
-  doc,
-  updateDoc,
-  serverTimestamp,
+  collection, query, orderBy, onSnapshot,
+  doc, updateDoc, setDoc, getDoc, serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../../firebase";
 import { useAuth } from "../../context/AuthContext";
@@ -482,6 +477,11 @@ function OrderDrawer({ order, onClose, onStatusChange, onMemo }) {
               <DrawerRow label="Name" value={order.handledBy.name} />
               <DrawerRow label="Email" value={order.handledBy.email} />
             </DrawerSection>
+          )}
+
+          {/* IP Tracking */}
+          {order.clientIP && (
+            <IPSection order={order} />
           )}
 
           {/* Cash memo button */}
