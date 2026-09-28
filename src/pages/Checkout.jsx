@@ -11,6 +11,7 @@ import { db } from "../firebase";
 import { useCart } from "../context/CartContext";
 import { sanitizeText, checkRateLimit, recordAttempt } from "../utils/security";
 import { useAuth } from "../context/AuthContext";
+import emailjs from "@emailjs/browser";
 
 const DELIVERY = {
   dhaka: { label: "Inside Dhaka", fee: 80 },
@@ -267,6 +268,43 @@ export default function Checkout() {
 
       // Save to Firestore → orders/{orderId}
       await setDoc(doc(collection(db, "orders"), orderId), orderData);
+
+      // Send confirmation email — silent, never blocks order
+      try {
+        if (currentUser?.email) {
+          await emailjs.send(
+            import.meta.env.VITE_EMAILJS_SERVICE_ID,
+            import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+            {
+              customer_name: sanitizeText(form.name, 100),
+              email: currentUser.email,
+              order_id: orderId,
+              order_date: new Date().toLocaleDateString("en-BD", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+                timeZone: "Asia/Dhaka",
+              }),
+              items: items
+                .map(
+                  (i) =>
+                    `${i.name} × ${i.qty} = ৳${(i.price * i.qty).toLocaleString()}`,
+                )
+                .join(", "),
+              subtotal: totalAmount.toLocaleString(),
+              delivery_fee: deliveryFee.toLocaleString(),
+              discount: discount > 0 ? discount.toLocaleString() : "",
+              pay_at_door: (totalWithFee - deliveryFee).toLocaleString(),
+              delivery_zone: DELIVERY[form.delivery]?.label || "",
+              payment_method: PAYMENT[form.payment]?.label || "",
+              trx_id: form.trxId,
+            },
+            import.meta.env.VITE_EMAILJS_PUBLIC_KEY,
+          );
+        }
+      } catch (emailErr) {
+        console.error("EmailJS error:", emailErr);
+      }
 
       clear();
       navigate("/order-success", {

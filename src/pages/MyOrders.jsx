@@ -294,10 +294,13 @@ function OrderCard({ order, expanded, onToggle }) {
             </span>
             {/* Total */}
             <div className="text-right">
-              <p className="font-display font-bold text-[15px] text-white">
-                ৳{order.totalAmount?.toLocaleString()}
+              <p className="font-display font-bold text-[15px] text-red">
+                ৳
+                {(
+                  order.totalAmount - (order.deliveryFee ?? 0)
+                )?.toLocaleString()}
               </p>
-              <p className="text-[10px] text-muted">Order Total</p>
+              <p className="text-[10px] text-muted">Pay at Door</p>
             </div>
             {/* Chevron */}
             <svg
@@ -640,7 +643,7 @@ function RefundStatus({ orderId, deliveryFee }) {
             </div>
             <div className="flex justify-between">
               <span className="text-muted">Refunded From</span>
-              <span className="text-off">{refund.refundFrom||'—'}</span>
+              <span className="text-off">{refund.refundFrom || "—"}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted">Refunded To</span>
