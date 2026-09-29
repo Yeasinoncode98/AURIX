@@ -350,8 +350,123 @@ export default function OwnerOrders() {
               )}
             </div>
           </div>
+          {/* IP Tracking */}
+          {selected.clientIP && <OwnerIPSection order={selected} />}
         </>
       )}
+    </div>
+  );
+}
+
+/* ── IP Section for Owner (same logic as Admin) ── */
+function OwnerIPSection({ order }) {
+  const [blocked, setBlocked] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(true);
+  const ipKey = order.clientIP?.replace(/\./g, "_");
+
+  useEffect(() => {
+    if (!ipKey) return;
+    getDoc(doc(db, "blockedIPs", ipKey))
+      .then((snap) => {
+        setBlocked(snap.exists() && snap.data().active);
+        setChecking(false);
+      })
+      .catch(() => setChecking(false));
+  }, [ipKey]);
+
+  const toggle = async () => {
+    setLoading(true);
+    try {
+      await setDoc(
+        doc(db, "blockedIPs", ipKey),
+        {
+          ip: order.clientIP,
+          active: !blocked,
+          blockedAt: serverTimestamp(),
+          reason: "Blocked by owner from order: " + (order.orderId || order.id),
+          orderId: order.orderId || order.id,
+        },
+        { merge: true },
+      );
+      setBlocked((b) => !b);
+      toast.success(blocked ? "IP unblocked" : "IP blocked");
+    } catch {
+      toast.error("Failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const mapsUrl =
+    order.clientLat && order.clientLon
+      ? `https://www.google.com/maps?q=${order.clientLat},${order.clientLon}`
+      : null;
+
+  return (
+    <div className="mt-4 rounded-[8px] border border-[#1a1a1a] overflow-hidden">
+      <div className="px-4 py-2.5 border-b border-[#1a1a1a] bg-[#0d0d0d] flex items-center justify-between">
+        <p className="text-[10px] uppercase tracking-wider2 text-muted font-semibold">
+          IP & Location
+        </p>
+        {!checking && (
+          <span
+            className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${blocked ? "text-red bg-red/10 border-red/20" : "text-green-400 bg-green-500/10 border-green-500/20"}`}
+          >
+            {blocked ? "Blocked" : "Active"}
+          </span>
+        )}
+      </div>
+      <div className="px-4 py-3 space-y-2 text-[12px]">
+        <div className="flex justify-between">
+          <span className="text-muted">IP</span>
+          <span className="font-mono font-bold text-white">
+            {order.clientIP}
+          </span>
+        </div>
+        {order.clientCity && (
+          <div className="flex justify-between">
+            <span className="text-muted">City</span>
+            <span className="text-off">
+              {[order.clientCity, order.clientRegion]
+                .filter(Boolean)
+                .join(", ")}
+            </span>
+          </div>
+        )}
+        {order.clientCountry && (
+          <div className="flex justify-between">
+            <span className="text-muted">Country</span>
+            <span className="text-off">{order.clientCountry}</span>
+          </div>
+        )}
+        {order.clientISP && (
+          <div className="flex justify-between">
+            <span className="text-muted">ISP</span>
+            <span className="text-off truncate max-w-[180px]">
+              {order.clientISP}
+            </span>
+          </div>
+        )}
+        {mapsUrl && (
+          <a
+            href={mapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-[11px] text-blue-400 hover:text-blue-300"
+          >
+            📍 View on Map
+          </a>
+        )}
+        <button
+          onClick={toggle}
+          disabled={loading || checking}
+          className={`w-full mt-1 py-2 rounded-[6px] text-[11px] font-semibold border transition-all
+            ${blocked ? "bg-green-500/10 border-green-500/20 text-green-400" : "bg-red/10 border-red/20 text-red"} disabled:opacity-50`}
+        >
+          {loading ? "Updating..." : blocked ? "✓ Unblock IP" : "🚫 Block IP"}
+        </button>
+      </div>
     </div>
   );
 }
