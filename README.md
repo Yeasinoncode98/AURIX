@@ -1,4 +1,4 @@
-# AURIX — Premium Headphone E-Commerce Platform
+<!-- # AURIX — Premium Headphone E-Commerce Platform
 
 <div align="center">
 
@@ -218,4 +218,189 @@ This project and its entire source code are the **exclusive intellectual propert
   <br/>
   <p>© 2026 <strong>Sk.Yeasin Arafat</strong> · BSc CSE · Daffodil International University</p>
   <p><em>Unauthorized use of this codebase is strictly prohibited and subject to legal action.</em></p>
+</div> -->
+
+
+<!-- 2...............\ -->
+<div align="center">
+
+# 🎧 AURIX
+
+### Premium Headphone E-Commerce Platform
+
+*Engineered for sound. Designed for those who listen closely.*
+
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-Build-646CFF?logo=vite&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38BDF8?logo=tailwindcss&logoColor=white)
+![Firebase](https://img.shields.io/badge/Firebase-Auth%20%2B%20Firestore-FFCA28?logo=firebase&logoColor=black)
+![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-000000?logo=vercel&logoColor=white)
+
 </div>
+
+---
+
+## 📖 Overview
+
+**AURIX** is a full-stack, premium headphone e-commerce platform built for the Bangladeshi market. It pairs a cinematic, dark-themed storefront with a complete back-office: a role-based **Admin Dashboard** for daily operations and an **Owner Dashboard** for oversight, finance, and reporting.
+
+All prices are in **Bangladeshi Taka (৳)**, and the checkout is tailored for local mobile-payment workflows and delivery zones.
+
+---
+
+## ✨ Features
+
+### 🛍️ Customer Storefront
+- **Cinematic landing page** with Hero, Product Reveal, Sound, Engineering, Craftsmanship, Specifications, and CTA sections
+- **Shop** with an animated headphone intro, premium product cards, and category filters
+- **Product detail pages** with full specs, features, what's-in-the-box, and related products
+- **Reviews & ratings** with live updates and admin replies
+- **Cart drawer** with quantity controls and live subtotal
+- **Checkout** with delivery zones (Dhaka / Outside Dhaka), mobile-payment verification, and coupon support
+- **Order confirmation** page with a complete receipt and "Amount to Pay at Door"
+- **Order confirmation emails** sent automatically to logged-in customers
+- **My Orders** with real-time status and a visual 5-step order tracker
+- **Order cancellation** for pending or confirmed orders, with an automatic refund request
+- **Live refund status** visible to the customer
+- **Profile** with avatar upload and editable name and phone
+- **Responsive design** with a mobile-first navbar and slide-in drawer
+
+### 🛠️ Admin Dashboard
+| Module | Highlights |
+|---|---|
+| **Dashboard** | Live Bangladesh clock, real-time stat cards, low-stock alerts, order and revenue trends, top products, order-status breakdown |
+| **Orders** | Search by ID, name, or phone; status workflow; "handled by" tracking; printable cash memos (customer copy or both copies) |
+| **Products** | Full CRUD, stock management, device upload or external image URL |
+| **Categories** | Icon and color accent, live filter preview, product counts |
+| **Reviews** | All reviews in real time with admin replies |
+| **Refunds** | Review cancelled-order refunds, record transaction details, notify the customer |
+| **Users / CRM** | All customers, live presence, editable customer details, order history |
+| **Coupons** | Percentage or fixed discounts, active/inactive toggle, live marquee on the Shop page |
+| **Billings** | Billing history with date filters and printing |
+| **Analytics** | KPIs, charts, and a conversion funnel |
+| **Monthly Reports** | Month, year, or custom range reports, printable/PDF, CEO signature option |
+| **Admin Profile & Management** | Each admin maintains their own verified profile; super-admin view is read-only |
+| **Notifications** | Real-time bell with toast alerts for new orders and reviews |
+| **IP Tracking** | Order origin details with the ability to block abusive IPs |
+
+### 👑 Owner Dashboard
+A read-focused executive console for business oversight:
+
+- **Overview**: real-time metrics, charts, and admin presence
+- **Orders**: read-only order explorer with search, date filter, and detail drawer
+- **Admin Management**: promote or demote admins
+- **Admin Performance**: per-admin handling stats with date ranges
+- **Inventory**: read-only products and stock alerts
+- **Customers**: customer list with order statistics
+- **Coupons**: coupon overview with usage counts
+- **Finance**: revenue breakdown, monthly chart, payment-method split
+- **Reports**: printable reports with optional CEO signature
+- **Profile**: personal owner profile
+
+### 🔐 Authentication
+- Email/password and Google sign-in for customers
+- Separate **Admin** and **Owner** login tabs with server-verified role checks
+- Real-time role watcher that signs out an admin automatically if their access is removed
+
+### 🛡️ Security Practices
+- Input sanitization on all user-facing forms
+- Client-side rate limiting on login, registration, checkout, and reviews
+- Hardened database security rules with role and ownership validation
+- Security headers (CSP, X-Frame-Options, Referrer-Policy, and more)
+- Environment-based configuration; secrets are never committed
+
+---
+
+## 🧰 Tech Stack
+
+| Layer | Technology |
+|---|---|
+| **Frontend** | React 18, React Router DOM, Vite |
+| **Styling** | Tailwind CSS (custom dark theme) |
+| **Animation** | GSAP |
+| **Backend as a Service** | Firebase Authentication, Cloud Firestore |
+| **Charts** | Recharts |
+| **Notifications** | react-hot-toast |
+| **Printing** | react-to-print |
+| **Email** | EmailJS |
+| **Hosting** | Vercel |
+
+---
+
+## 📁 Project Structure
+
+```
+src/
+├── App.jsx                # Routing (public, /admin/*, /owner/*)
+├── main.jsx               # App entry: Router + providers
+├── firebase.js            # Firebase initialization (env-based)
+├── context/               # Auth and Cart providers
+├── pages/                 # Customer-facing pages
+├── components/            # Shared UI (Navbar, CartDrawer, sections...)
+├── admin/                 # Admin layout and dashboard pages
+├── owner/                 # Owner layout and dashboard pages
+└── utils/                 # Security and helper utilities
+```
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 18 or later
+- A Firebase project (Authentication and Firestore enabled)
+
+### Installation
+
+```bash
+# 1. Clone the repository
+git clone <your-repository-url>
+cd aurix
+
+# 2. Install dependencies
+npm install
+
+# 3. Configure environment variables
+cp .env.example .env
+# Fill in your own Firebase and EmailJS credentials
+
+# 4. Start the development server
+npm run dev
+```
+
+### Production Build
+
+```bash
+npm run build
+npm run preview
+```
+
+---
+
+## 🗺️ Roadmap
+
+- [x] Storefront, checkout, and order tracking
+- [x] Admin Dashboard with full operations suite
+- [x] Owner Dashboard with finance and reporting
+- [x] Security hardening
+- [x] Order emails, cancellation, and refunds
+- [ ] Further Owner Dashboard enhancements
+- [ ] Server-side session revocation and admin provisioning via Cloud Functions
+
+---
+
+## 👨‍💻 Developer
+
+**Sk. Yeasin Arafat**
+BSc in Computer Science & Engineering
+Daffodil International University, 6th Semester
+
+---
+
+## ⚖️ Copyright & Legal Notice
+
+**© AURIX. All rights reserved.**
+
+This project, including its source code, design, branding, and assets, is proprietary. Copying, cloning, redistributing, reselling, or reusing any part of it, in whole or in part, without prior written permission from the author is strictly prohibited and may result in legal action.
+
+The repository is shared for portfolio and review purposes only.
